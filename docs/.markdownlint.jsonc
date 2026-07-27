@@ -1,0 +1,8 @@
+{
+  // The docs/ tree is published to ReadMe (see docs/README.md),
+  // which reflows prose, so paragraphs are intentionally kept as one line per sentence/
+  // paragraph rather than hard-wrapped. MD013 (line-length) conflicts with that, so it is
+  // disabled for docs/ only. All other rules from the repo-root config still apply here.
+  "extends": "../.config/.markdownlint.jsonc",
+  "MD013": false
+}

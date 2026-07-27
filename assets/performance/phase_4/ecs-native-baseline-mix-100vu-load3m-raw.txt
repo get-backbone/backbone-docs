@@ -1,0 +1,164 @@
+Run 1:
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 40298   110.792627/s
+    checks_succeeded...: 100.00% 40298 out of 40298
+    checks_failed......: 0.00%   0 out of 40298
+
+    ✓ logged in successfully
+    ✓ fetched actor
+    ✓ uploaded document
+    ✓ registered successfully
+
+    CUSTOM
+    endpoint_actor_get.............: avg=16.19ms  min=3.53ms   med=6.95ms   max=878.98ms p(90)=25.12ms  p(95)=58.41ms  p(99)=202.11ms
+    endpoint_auth_login............: avg=479.08ms min=249.31ms med=312.21ms max=5.23s    p(90)=697.68ms p(95)=1.97s    p(99)=2.68s
+    endpoint_auth_register.........: avg=844.85ms min=688.65ms med=815.93ms max=3.55s    p(90)=918.91ms p(95)=982.59ms p(99)=1.41s
+    endpoint_document_upload.......: avg=61.63ms  min=36.48ms  med=47.65ms  max=597.78ms p(90)=94.43ms  p(95)=121.46ms p(99)=251.72ms
+
+    HTTP
+    http_req_duration..............: avg=75.58ms  min=3.53ms   med=7.9ms    max=5.23s    p(90)=163.45ms p(95)=364.58ms p(99)=897.74ms
+      { expected_response:true }...: avg=75.58ms  min=3.53ms   med=7.9ms    max=5.23s    p(90)=163.45ms p(95)=364.58ms p(99)=897.74ms
+    http_req_failed................: 0.00%  0 out of 40298
+    http_reqs......................: 40298  110.792627/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.12s    min=1s       med=1s       max=6.29s    p(90)=1.08s    p(95)=2.61s    p(99)=2.82s
+    iterations.....................: 32212  88.561519/s
+    vus............................: 2      min=0          max=132
+    vus_max........................: 200    min=200        max=200
+
+    NETWORK
+    data_received..................: 32 MB  89 kB/s
+    data_sent......................: 8.6 MB 24 kB/s
+
+Run 2:
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 40013  110.176038/s
+    checks_succeeded...: 99.98% 40006 out of 40013
+    checks_failed......: 0.01%  7 out of 40013
+
+    ✓ logged in successfully
+    ✗ fetched actor
+      ↳  99% — ✓ 31981 / ✗ 7
+    ✓ uploaded document
+    ✓ registered successfully
+
+    CUSTOM
+    endpoint_actor_get.............: avg=21.75ms  min=3.86ms   med=6.99ms   max=1.14s    p(90)=30.93ms  p(95)=77.92ms  p(99)=399.98ms
+    endpoint_auth_login............: avg=506.99ms min=256.54ms med=310.76ms max=5.07s    p(90)=775.03ms p(95)=2.27s    p(99)=3.13s
+    endpoint_auth_register.........: avg=850.43ms min=674.42ms med=807.86ms max=3.51s    p(90)=924.74ms p(95)=1.06s    p(99)=1.68s
+    endpoint_document_upload.......: avg=65.16ms  min=36.69ms  med=47.69ms  max=689.73ms p(90)=97.6ms   p(95)=134.86ms p(99)=323.53ms
+
+    HTTP
+    http_req_duration..............: avg=82.12ms  min=3.86ms   med=7.88ms   max=5.07s    p(90)=260.49ms p(95)=524.59ms p(99)=898.25ms
+      { expected_response:true }...: avg=82.08ms  min=3.86ms   med=7.88ms   max=5.07s    p(90)=259.31ms p(95)=524.23ms p(99)=898.25ms
+    http_req_failed................: 0.01%  7 out of 40013
+    http_reqs......................: 40013  110.176038/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.12s    min=1s       med=1s       max=6.16s    p(90)=1.09s    p(95)=2.61s    p(99)=2.84s
+    iterations.....................: 31988  88.079152/s
+    vus............................: 6      min=6          max=187
+    vus_max........................: 200    min=200        max=200
+
+    NETWORK
+    data_received..................: 32 MB  89 kB/s
+    data_sent......................: 8.5 MB 24 kB/s
+
+Observed the following on the actor-bff service, which is consistent with outbound client (BFF → internal ALB → actor-service) seeing the TCP connection disappear
+(ALB idle, target reset, or rare pool edge). Can show up as 500 with a Quarkus error id if it is not mapped the same way as a normal HTTP error response.
+
+3 May 2026, 14:56
+2026-05-03 21:56:02,205 ERROR [runtime.QuarkusErrorHandler] HTTP Request to /actors/b8313370-8081-70a4-3bc0-1f5347969600 failed, error id: ec9e7df3-6a98-472d-a41f-12039d3b3263-4: jakarta.ws.rs.ProcessingException: java.io.IOException: Connection was closed
+backbone
+3 May 2026, 14:56
+2026-05-03 21:56:02,204 ERROR [runtime.QuarkusErrorHandler] HTTP Request to /actors/1831e380-f011-708a-7bfc-8bf879d84c56 failed, error id: ec9e7df3-6a98-472d-a41f-12039d3b3263-2: jakarta.ws.rs.ProcessingException: java.io.IOException: Connection was closed
+backbone
+3 May 2026, 14:56
+2026-05-03 21:56:02,205 ERROR [runtime.QuarkusErrorHandler] HTTP Request to /actors/e841a380-70b1-70d3-58dd-da47756e6f57 failed, error id: ec9e7df3-6a98-472d-a41f-12039d3b3263-3: jakarta.ws.rs.ProcessingException: java.io.IOException: Connection was closed
+backbone
+3 May 2026, 14:56
+2026-05-03 21:56:02,204 ERROR [runtime.QuarkusErrorHandler] HTTP Request to /actors/f8e173c0-8041-70bd-d4f4-469f8a1c208f failed, error id: ec9e7df3-6a98-472d-a41f-12039d3b3263-1: jakarta.ws.rs.ProcessingException: java.io.IOException: Connection was closed
+backbone
+
+Quarkus HTTP connection pool configuration updated to:
+quarkus.rest-client.connection-ttl=55000
+
+Run 3:
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 40478  111.350414/s
+    checks_succeeded...: 99.99% 40477 out of 40478
+    checks_failed......: 0.00%  1 out of 40478
+
+    ✗ logged in successfully
+      ↳  99% — ✓ 1817 / ✗ 1
+    ✓ fetched actor
+    ✓ uploaded document
+    ✓ registered successfully
+
+    CUSTOM
+    endpoint_actor_get.............: avg=13.03ms  min=3.49ms   med=6.55ms   max=543.31ms p(90)=14.5ms   p(95)=41.32ms  p(99)=169.54ms
+    endpoint_auth_login............: avg=457.63ms min=254.79ms med=313.43ms max=4.58s    p(90)=596.05ms p(95)=1.69s    p(99)=2.45s
+    endpoint_auth_register.........: avg=839.48ms min=677.25ms med=812.04ms max=2.89s    p(90)=905.73ms p(95)=971.9ms  p(99)=1.35s
+    endpoint_document_upload.......: avg=59.46ms  min=35.13ms  med=47.32ms  max=716.67ms p(90)=85.12ms  p(95)=101.91ms p(99)=276.11ms
+
+    HTTP
+    http_req_duration..............: avg=71.66ms  min=3.49ms   med=7.16ms   max=4.58s    p(90)=128.67ms p(95)=356.54ms p(99)=884.14ms
+      { expected_response:true }...: avg=71.55ms  min=3.49ms   med=7.16ms   max=4.5s     p(90)=128.61ms p(95)=356.45ms p(99)=884.07ms
+    http_req_failed................: 0.00%  1 out of 40478
+    http_reqs......................: 40478  111.350414/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.11s    min=1s       med=1s       max=5.64s    p(90)=1.07s    p(95)=2.61s    p(99)=2.78s
+    iterations.....................: 32357  89.010459/s
+    vus............................: 6      min=0          max=174
+    vus_max........................: 200    min=200        max=200
+
+    NETWORK
+    data_received..................: 32 MB  89 kB/s
+    data_sent......................: 8.6 MB 24 kB/s
+
+The single failure in the 3rd run is v likely test data concurrency during the auth process, completely acceptable (not enough test
+users basically - one 401 for bob@example.com over tens of thousands of checks is consistent with a rare Cognito / concurrency /
+transient event on a heavily shared account).
+
+Run 4:
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 40304   111.278805/s
+    checks_succeeded...: 100.00% 40304 out of 40304
+    checks_failed......: 0.00%   0 out of 40304
+
+    ✓ logged in successfully
+    ✓ fetched actor
+    ✓ uploaded document
+    ✓ registered successfully
+
+    CUSTOM
+    endpoint_actor_get.............: avg=15.28ms  min=3.53ms   med=6.63ms   max=920.12ms p(90)=18ms     p(95)=46.92ms  p(99)=205.55ms
+    endpoint_auth_login............: avg=504.76ms min=258.54ms med=311.67ms max=3.7s     p(90)=860.83ms p(95)=2.22s    p(99)=2.95s
+    endpoint_auth_register.........: avg=842.79ms min=683.85ms med=812.62ms max=3.63s    p(90)=906.96ms p(95)=974.99ms p(99)=1.5s
+    endpoint_document_upload.......: avg=60.59ms  min=35.34ms  med=46.56ms  max=866.7ms  p(90)=88.62ms  p(95)=110.23ms p(99)=284.17ms
+
+    HTTP
+    http_req_duration..............: avg=74.72ms  min=3.53ms   med=7.39ms   max=3.7s     p(90)=141.99ms p(95)=376.24ms p(99)=884.19ms
+      { expected_response:true }...: avg=74.72ms  min=3.53ms   med=7.39ms   max=3.7s     p(90)=141.99ms p(95)=376.24ms p(99)=884.19ms
+    http_req_failed................: 0.00%  0 out of 40304
+    http_reqs......................: 40304  111.278805/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.11s    min=1s       med=1s       max=5.57s    p(90)=1.07s    p(95)=2.61s    p(99)=2.81s
+    iterations.....................: 32266  89.085995/s
+    vus............................: 3      min=3          max=189
+    vus_max........................: 200    min=200        max=200
+
+    NETWORK
+    data_received..................: 32 MB  88 kB/s
+    data_sent......................: 8.6 MB 24 kB/s

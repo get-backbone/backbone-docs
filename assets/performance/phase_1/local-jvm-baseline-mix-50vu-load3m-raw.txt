@@ -1,0 +1,178 @@
+Run 1: 
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 12877   52.137191/s
+    checks_succeeded...: 100.00% 12877 out of 12877
+    checks_failed......: 0.00%   0 out of 12877
+
+    ✓ logged in successfully
+    ✓ fetched actor
+    ✓ registered successfully
+    ✓ uploaded document
+
+    CUSTOM
+    endpoint_actor_get.............: avg=40.91ms  min=2.9ms    med=7.37ms   max=4.68s  p(90)=49.18ms  p(95)=75.1ms   p(99)=252.39ms
+    endpoint_auth_login............: avg=450.22ms min=284.86ms med=377.96ms max=1.09s  p(90)=650.77ms p(95)=999.25ms p(99)=1.06s
+    endpoint_auth_register.........: avg=1.05s    min=783.75ms med=965.9ms  max=10.55s p(90)=1.14s    p(95)=1.23s    p(99)=3.93s
+    endpoint_document_upload.......: avg=187.96ms min=50.26ms  med=102.05ms max=6.93s  p(90)=218.38ms p(95)=298.35ms p(99)=4.12s
+
+    HTTP
+    http_req_duration..............: avg=114.17ms min=2.9ms    med=9.74ms   max=10.55s p(90)=240.11ms p(95)=592.23ms p(99)=1.11s
+      { expected_response:true }...: avg=114.17ms min=2.9ms    med=9.74ms   max=10.55s p(90)=240.11ms p(95)=592.23ms p(99)=1.11s
+    http_req_failed................: 0.00% 0 out of 12877
+    http_reqs......................: 12877 52.137191/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.16s    min=1s       med=1s       max=13.43s p(90)=1.14s    p(95)=2.79s    p(99)=3.3s
+    iterations.....................: 10352 41.913815/s
+    vus............................: 1     min=0          max=68
+    vus_max........................: 100   min=100        max=100
+
+    NETWORK
+    data_received..................: 10 MB 42 kB/s
+    data_sent......................: 16 MB 64 kB/s
+
+Run 2: 
+    
+    ERRO[0228] [backbone-perf] auth_register status=400 body={"error":"Cognito registration failed: User already exists: User account already exists (Service: CognitoIdentityProvider, Status Code: 400, Request ID: 37ea9a69-c67a-45e8-bb99-d4387ef813c2) (SDK Attempt Count: 1)"}  source=console
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 12893  52.211096/s
+    checks_succeeded...: 99.99% 12892 out of 12893
+    checks_failed......: 0.00%  1 out of 12893
+
+    ✓ logged in successfully
+    ✓ fetched actor
+    ✗ registered successfully
+      ↳  99% — ✓ 526 / ✗ 1
+    ✓ uploaded document
+
+    CUSTOM
+    endpoint_actor_get.............: avg=44.22ms  min=2.94ms   med=7.97ms   max=4.04s  p(90)=52ms     p(95)=97.35ms  p(99)=365.1ms
+    endpoint_auth_login............: avg=426.48ms min=286.29ms med=369.38ms max=1.45s  p(90)=535.19ms p(95)=930.35ms p(99)=989.92ms
+    endpoint_auth_register.........: avg=1.08s    min=750.37ms med=963.07ms max=9.92s  p(90)=1.15s    p(95)=1.34s    p(99)=3.89s
+    endpoint_document_upload.......: avg=163.94ms min=51.5ms   med=107.64ms max=6.14s  p(90)=253.49ms p(95)=329.91ms p(99)=878.35ms
+
+    HTTP
+    http_req_duration..............: avg=119.41ms min=2.94ms   med=11.24ms  max=9.92s  p(90)=322.05ms p(95)=837.39ms p(99)=1.15s
+      { expected_response:true }...: avg=119.36ms min=2.94ms   med=11.24ms  max=9.92s  p(90)=321.81ms p(95)=837.39ms p(99)=1.15s
+    http_req_failed................: 0.00% 1 out of 12893
+    http_reqs......................: 12893 52.211096/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.17s    min=1s       med=1.01s    max=12.23s p(90)=1.19s    p(95)=2.82s    p(99)=3.32s
+    iterations.....................: 10253 41.520233/s
+    vus............................: 3     min=0          max=69
+    vus_max........................: 100   min=100        max=100
+
+    NETWORK
+    data_received..................: 11 MB 44 kB/s
+    data_sent......................: 16 MB 64 kB/s
+
+Run 3:
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 13268   54.513528/s
+    checks_succeeded...: 100.00% 13268 out of 13268
+    checks_failed......: 0.00%   0 out of 13268
+
+    ✓ logged in successfully
+    ✓ fetched actor
+    ✓ uploaded document
+    ✓ registered successfully
+
+    CUSTOM
+    endpoint_actor_get.............: avg=23.6ms   min=2.9ms    med=7.94ms   max=957.95ms p(90)=54.5ms   p(95)=85.32ms  p(99)=260.68ms
+    endpoint_auth_login............: avg=428.29ms min=288.66ms med=368.91ms max=1.13s    p(90)=558.94ms p(95)=892.49ms p(99)=1.06s
+    endpoint_auth_register.........: avg=989.91ms min=753.77ms med=953.43ms max=2.22s    p(90)=1.13s    p(95)=1.23s    p(99)=1.84s
+    endpoint_document_upload.......: avg=133.24ms min=52.81ms  med=109.11ms max=1.04s    p(90)=226.71ms p(95)=289.87ms p(99)=439.79ms
+
+    HTTP
+    http_req_duration..............: avg=95.27ms  min=2.9ms    med=11.11ms  max=2.22s    p(90)=300.54ms p(95)=513.29ms p(99)=1.04s
+      { expected_response:true }...: avg=95.27ms  min=2.9ms    med=11.11ms  max=2.22s    p(90)=300.54ms p(95)=513.29ms p(99)=1.04s
+    http_req_failed................: 0.00% 0 out of 13268
+    http_reqs......................: 13268 54.513528/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.14s    min=1s       med=1.01s    max=4.34s    p(90)=1.16s    p(95)=2.76s    p(99)=3.17s
+    iterations.....................: 10514 43.198314/s
+    vus............................: 3     min=3          max=93
+    vus_max........................: 100   min=100        max=100
+
+    NETWORK
+    data_received..................: 11 MB 46 kB/s
+    data_sent......................: 16 MB 67 kB/s
+ 
+Run 4: 
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 13264  54.559921/s
+    checks_succeeded...: 99.81% 13239 out of 13264
+    checks_failed......: 0.18%  25 out of 13264
+
+    ✓ logged in successfully
+    ✓ fetched actor
+    ✗ uploaded document
+      ↳  98% — ✓ 1506 / ✗ 25
+    ✓ registered successfully
+
+    CUSTOM
+    endpoint_actor_get.............: avg=18.71ms  min=2.65ms   med=6.82ms   max=694.21ms p(90)=46.46ms  p(95)=71.26ms  p(99)=134.25ms
+    endpoint_auth_login............: avg=411.5ms  min=287.79ms med=365.32ms max=997.02ms p(90)=547.1ms  p(95)=685.09ms p(99)=930.92ms
+    endpoint_auth_register.........: avg=967.28ms min=781.83ms med=940.25ms max=1.69s    p(90)=1.11s    p(95)=1.19s    p(99)=1.33s
+    endpoint_document_upload.......: avg=154.3ms  min=52.49ms  med=97.27ms  max=3.49s    p(90)=199.63ms p(95)=252.6ms  p(99)=2.25s
+
+    HTTP
+    http_req_duration..............: avg=89.63ms  min=2.65ms   med=8.73ms   max=3.49s    p(90)=208.72ms p(95)=498.99ms p(99)=1.03s
+      { expected_response:true }...: avg=89.63ms  min=2.65ms   med=8.73ms   max=3.49s    p(90)=208.72ms p(95)=498.99ms p(99)=1.03s
+    http_req_failed................: 0.00% 0 out of 13264
+    http_reqs......................: 13264 54.559921/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.13s    min=1s       med=1s       max=6.3s     p(90)=1.13s    p(95)=2.7s     p(99)=3.1s
+    iterations.....................: 10602 43.610093/s
+    vus............................: 3     min=3          max=94
+    vus_max........................: 100   min=100        max=100
+
+    NETWORK
+    data_received..................: 11 MB 45 kB/s
+    data_sent......................: 16 MB 67 kB/s
+
+Run 5: 
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 13051   53.525709/s
+    checks_succeeded...: 100.00% 13051 out of 13051
+    checks_failed......: 0.00%   0 out of 13051
+
+    ✓ logged in successfully
+    ✓ fetched actor
+    ✓ registered successfully
+    ✓ uploaded document
+
+    CUSTOM
+    endpoint_actor_get.............: avg=32.47ms  min=2.74ms   med=8.62ms   max=1.37s p(90)=63.63ms  p(95)=124.66ms p(99)=425.15ms
+    endpoint_auth_login............: avg=408.5ms  min=281.4ms  med=372.13ms max=1.11s p(90)=537.65ms p(95)=629.29ms p(99)=725.31ms
+    endpoint_auth_register.........: avg=1s       min=750.72ms med=954.15ms max=3s    p(90)=1.16s    p(95)=1.32s    p(99)=2.18s
+    endpoint_document_upload.......: avg=174.45ms min=51.42ms  med=109.71ms max=4s    p(90)=252.83ms p(95)=341.91ms p(99)=1.91s
+
+    HTTP
+    http_req_duration..............: avg=107.43ms min=2.74ms   med=12.14ms  max=4s    p(90)=332.52ms p(95)=672.74ms p(99)=1.1s
+      { expected_response:true }...: avg=107.43ms min=2.74ms   med=12.14ms  max=4s    p(90)=332.52ms p(95)=672.74ms p(99)=1.1s
+    http_req_failed................: 0.00% 0 out of 13051
+    http_reqs......................: 13051 53.525709/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.16s    min=1s       med=1.01s    max=6.1s  p(90)=1.19s    p(95)=2.79s    p(99)=3.22s
+    iterations.....................: 10400 42.653235/s
+    vus............................: 2     min=0          max=64
+    vus_max........................: 100   min=100        max=100
+
+    NETWORK
+    data_received..................: 11 MB 45 kB/s
+    data_sent......................: 16 MB 66 kB/s

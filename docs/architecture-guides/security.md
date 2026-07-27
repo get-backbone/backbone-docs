@@ -1,0 +1,339 @@
+---
+title: "Platform security posture"
+summary: "Backbone is a production-oriented platform baseline for teams running containerized services on AWS. This guide explains the security controls that are…"
+---
+
+<!-- markdownlint-disable-file MD013 -->
+<!-- MD013 off: policy prose, long URLs, and table rows exceed the repository line length limit without harm to readability. -->
+
+Backbone is a production-oriented platform baseline for teams running containerized services on AWS. This guide explains the security controls that are implemented today, the risks that are intentionally accepted, and the controls that remain the responsibility of each client team.
+
+This document is public and meant for architecture review, procurement review, and security review. User login and token lifecycle details live in [USER_AUTHENTICATION.md](/docs/user-authentication). Service identity and service-level authorization details live in [SERVICE_AUTHENTICATION.md](/docs/service-authentication).
+
+## Scope and operating model
+
+Backbone provisions and operates infrastructure inside AWS accounts owned by the client organization. The platform ships opinionated defaults for network topology, identity, workload runtime, and CI access patterns.
+
+Backbone is not a managed SaaS control plane. Client teams retain operational ownership of the AWS account, service code, data classification, key management decisions, and any controls required by their regulatory framework.
+
+Backbone follows a single-tenant deployment model. Each client environment is isolated in the client-owned AWS account boundary.
+
+## Threat model baseline
+
+Backbone baseline assumptions:
+
+1. Public endpoints are internet-exposed and should be treated as reachable by commodity attack traffic, including scanning and request flooding.
+2. Internal network location is not sufficient proof of trust for protected operations.
+3. Compromise of one service should not automatically authorize access to another service without explicit identity and authorization checks.
+
+Backbone baseline non-assumptions:
+
+1. Full service-mesh zero-trust controls such as mTLS and workload identity federation are not mandatory in the baseline.
+2. Deep detection and response controls such as SIEM correlation and SOC operations are organization-level concerns outside platform defaults.
+
+## Security principles
+
+Backbone applies these principles by default:
+
+1. Verify identity for user and service requests through JWT validation and explicit authorization checks.
+2. Enforce least privilege in IAM policy design through narrow action sets and resource scoping.
+3. Keep stateful infrastructure private by default and expose only explicit edge entry points.
+4. Store sensitive configuration in managed secret stores instead of source control.
+5. Apply a progressive hardening model where identity controls are always required and transport hardening is added per environment risk profile.
+
+Progressive hardening means teams can layer stronger transport, key management, and policy controls without redesigning application-level identity and authorization logic.
+
+No repository-authored baseline IAM policy or construct intentionally grants `Action: "*"`, and wildcard resource usage is explicitly documented and constrained.
+
+## Network and edge security posture
+
+### Trust boundaries
+
+Backbone uses explicit trust boundaries:
+
+1. Internet to CloudFront: untrusted traffic enters edge controls (WAF, TLS termination, caching).
+2. CloudFront to internet-facing ALB: origin boundary gated by defense in depth (edge WAF, network allowlisting, and a shared origin-verify secret).
+3. Internet-facing ALB to ECS services: application-layer authentication and authorization boundary (JWT and service token validation in Quarkus services, not at the ALB listener).
+4. Service to service: identity-based trust through token validation, not network location.
+5. AWS account boundary: primary tenant isolation boundary between client environments.
+
+### VPC segmentation
+
+Backbone deploys a dedicated VPC per environment with:
+
+- public subnets for internet-facing load balancers (CloudFront origin targets)
+- private subnets for application workloads and data-plane dependencies
+- `restrictDefaultSecurityGroup: true` to avoid permissive default security group behavior
+
+Traffic between network zones is controlled through explicit security group rules. In PROD, reject-only VPC flow logs are enabled and retained for one year to support operational and forensic review.
+
+### Security group posture
+
+Current ingress posture is explicit and narrow:
+
+- Internet-facing ALB security group allows inbound TCP `443` from the AWS-managed CloudFront origin-facing **IPv4** prefix list only (the internet-facing ALB is IPv4-only).
+- ECS service security group allows inbound application traffic only from ALB security groups.
+- Internal ALB security group accepts traffic from ECS service security group only.
+
+See [CloudFront origin protection (defense in depth)](#cloudfront-origin-protection-defense-in-depth) for how security-group rules combine with listener and edge controls.
+
+The current internal ALB path uses HTTP (`80`) for service-to-service calls. Identity and authorization remain enforced at the application layer through JWT validation and service authorization checks. HTTPS on the internal path is an available hardening step documented in [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
+
+Baseline implication: confidentiality of internal service traffic is not guaranteed by default transport settings and should be hardened for environments with stricter compliance or threat requirements.
+
+Baseline traffic expectation: internal HTTP carries authenticated application payloads and is not designed as a transport channel for long-lived plaintext credentials. Client teams remain responsible for payload classification and required transport hardening for their risk profile.
+
+### CloudFront origin protection (defense in depth)
+
+API traffic reaches the internet-facing ALB only as a **CloudFront HTTPS origin** on a dedicated regional hostname. Three complementary controls apply; none replaces the others.
+
+| Control                                                                             | Layer                | What it blocks                                                                                                                                                               |
+|-------------------------------------------------------------------------------------|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CloudFront-scoped AWS WAF                                                           | Edge (viewer)        | Wrong-host, abusive, or geo-blocked **viewer** traffic before it reaches regional infrastructure                                                                             |
+| CloudFront origin-facing **IPv4** prefix list on internet-facing ALB security group | Network (origin)     | TCP `443` connections whose source is **not** in the published CloudFront origin-facing ranges (before TLS/HTTP is processed)                                                |
+| Shared origin-verification header on ALB listener rules                             | Application (origin) | HTTPS requests that reach the listener **without** valid CloudFront origin authentication (default listener action **403**; path rules forward only when the header matches) |
+
+**Primary origin gate:** **CloudFront origin authentication** enforced at the ALB listener via a shared verification header. CloudFront adds the secret on origin requests; the value lives in Secrets Manager and is not exposed to browsers. This is the control that proves traffic was configured through the distribution’s origin settings.
+
+**Supplementary network filter:** the **IPv4 prefix list** on the internet-facing ALB security group. It reduces direct internet reachability, scanning noise, and load on the ALB but consumes security-group rule capacity (each prefix-list entry counts toward the per-group quota). It is not required for a sound CloudFront-to-ALB design when the origin header is enforced; Backbone uses both for defense in depth.
+
+The internet-facing ALB remains an internet-routable endpoint (required for CloudFront origin connectivity) but is not open to arbitrary internet sources at the security-group layer. Clients that bypass CloudFront IP ranges may still complete TLS to the listener; without valid CloudFront origin authentication they receive **403** and do not reach ECS target groups.
+
+Private ALB plus CloudFront VPC origins remains an optional hardening path for stricter threat models. See [ADR-0022](/docs/0022-public-alb-edge-and-origin-protection).
+
+### WAF and edge controls
+
+Public traffic enters through Amazon CloudFront at the environment apex hostname (`{env}.{domain}`). A CloudFront-scoped AWS WAF WebACL (provisioned in `us-east-1`) is attached to the distribution with:
+
+- host allowlist rule for the expected application hostname
+- request-rate limiting rule
+- geo-blocking rule
+
+Host allowlist validation at the edge is a hygiene and traffic-shaping control for viewer requests. It is not cryptographic origin proof on its own.
+
+API path behaviors on the distribution forward to the internet-facing ALB origin over HTTPS. Static UI assets are served from a private S3 bucket through Origin Access Control (OAC); the bucket blocks public access, enforces SSL, and uses server-side encryption.
+
+WAF at the edge is the first layer in the [origin protection model](#cloudfront-origin-protection-defense-in-depth); ALB listener and security-group controls apply on the regional origin path.
+
+See [ADR-0022](/docs/0022-public-alb-edge-and-origin-protection) for origin-hardening rationale and [ADR-0025](/docs/0025-static-ui-cloudfront-s3) for static UI delivery.
+
+## Identity and access management posture
+
+### User and service identity
+
+Backbone separates human and workload identity:
+
+- user authentication flows issue JWTs through Cognito-backed auth services
+- service-to-service calls use dedicated service accounts and service JWTs
+- receiving services can enforce caller allowlists through `@AllowedServices`
+
+The platform does not rely on a trusted internal network assumption for service authorization. Services validate token identity and claims on each protected request.
+
+### Least-privilege IAM implementation
+
+IAM policies in infrastructure code are scoped to specific actions and resource sets wherever AWS APIs support resource-level constraints. Examples include:
+
+- Cognito user-pool actions scoped to actor and service pool ARNs
+- SSM reads scoped to specific Cognito parameter ARNs
+- DynamoDB access scoped to known table and index ARNs
+- S3 access split between bucket-level and object-level permissions
+- Secrets Manager access scoped to required secret prefixes
+
+### Wildcard usage policy and exceptions
+
+Backbone avoids broad wildcard permissions for administrative access. Current wildcard usage is limited to AWS API patterns that require wildcard resources or predictable suffix matching:
+
+- `ecr:GetAuthorizationToken` uses `Resource: "*"` because AWS requires account-level token retrieval.
+- SES send and account health actions use `Resource: "*"` because SES actions in use are account-scoped.
+- Some Secrets Manager and index ARNs include wildcard suffixes for deterministic name patterns generated by AWS or deployment naming conventions.
+
+No `Action: "*"` or administrator-style privilege grants are part of the baseline platform constructs.
+
+## Secrets and credential handling
+
+Backbone stores application runtime-sensitive values in AWS Secrets Manager and AWS Systems Manager Parameter Store. ECS task and execution roles receive read access only for the secret paths and parameters required for runtime behavior.
+
+GitHub repository and environment secrets are used for CI and CD workflow execution, bootstrap operations, and external integration credentials. GitHub secrets are never consumed directly by ECS runtime workloads and are not the system of record for application runtime secret retrieval.
+
+Credential categories include:
+
+- service account credentials for service authentication
+- Cognito pool and client identifiers plus required client secrets
+- encryption material and OAuth credentials needed by optional flows
+
+Secret rotation is partially automated. The platform currently records explicit cdk-nag suppressions for selected secrets that do not have automatic rotation attached. Teams with stricter compliance requirements should enable managed rotation policies and key lifecycle controls per environment.
+
+## Data protection controls
+
+Encryption at rest posture in the baseline:
+
+- S3 buckets are provisioned with server-side encryption (`S3_MANAGED`) and SSL enforcement, including static UI, edge access-log, and datastore buckets
+- DynamoDB tables use DynamoDB-managed encryption at rest by default
+- RDS PostgreSQL instances use storage encryption with an AWS-managed KMS key
+- Secrets Manager data is encrypted at rest through AWS KMS-backed service behavior
+
+Client hardening option: customer-managed KMS keys may be introduced through client-owned infrastructure extension in a fork but are not part of the baseline platform configuration.
+
+Encryption in transit posture in the baseline:
+
+- public browser traffic terminates TLS at CloudFront (minimum TLS 1.2)
+- CloudFront forwards API traffic to the internet-facing ALB over HTTPS
+- the internet-facing ALB forwards to ECS tasks over HTTP within the VPC (ALB TLS termination does not extend to target groups)
+- internal service-to-service traffic through the internal ALB uses HTTP and can be hardened to HTTPS in a later stage
+
+## Runtime workload isolation and container privilege posture
+
+Current baseline runtime posture:
+
+- services run on ECS Fargate tasks, not on shared EC2 container hosts
+- service tasks run in private subnets with no public IP assignment
+- the shared Quarkus runtime image declares a non-root container user (`USER 1000`)
+
+Current repository posture on privileged runtime flags:
+
+- no repository-authored task definition sets privileged container mode
+- no repository-authored task definition enables host networking for application services
+
+Security interpretation:
+
+- Backbone baseline reduces host-level attack surface by combining Fargate isolation with non-root container execution
+- Backbone does not rely on privileged container capabilities for normal service operation
+
+Future hardening options for stricter environments:
+
+- read-only root filesystem where service runtime behavior allows it
+- explicit container capability minimization and policy checks
+- CI policy gates that fail builds when privileged runtime flags are introduced
+
+## CI/CD and GitHub security posture
+
+Backbone uses GitHub Actions OpenID Connect (OIDC) for AWS role assumption. The trust policy constrains issuer, audience, and subject pattern so only approved workflow identities can assume the deployment role.
+
+GitHub workflow permissions are scoped for deployment tasks:
+
+- read-only managed policies for S3 and DynamoDB baseline access
+- scoped ECR repository push and pull actions
+- scoped ECS deployment actions for target cluster and services
+- explicit bootstrap-role assumption permissions for CDK deploy flows
+
+The platform does not require long-lived AWS access keys in GitHub for routine deployments once OIDC bootstrap is complete.
+
+The baseline reduces credential supply chain risk by replacing long-lived CI cloud credentials with constrained, auditable OIDC role assumption.
+
+## Logging and auditability posture
+
+Platform logging controls currently implemented:
+
+- in PROD, VPC flow logs for rejected traffic, retained for one year
+- ECS task and application logs through CloudWatch log groups
+- CloudFront access logs and S3 server access logs for static edge and datastore buckets
+- WAF metrics and sampled requests through AWS WAF visibility configuration on the CloudFront WebACL
+
+Organization-level controls expected outside baseline platform constructs (or when `governanceEvidenceEnabled` is false):
+
+- Org-wide CloudTrail to a central log archive (preferred for enterprise landing zones)
+- ALB access logging to operator-owned buckets and lifecycle controls
+- SIEM integration, alerting, and incident response workflow
+
+Backbone provisions an optional **regional** CloudTrail trail, protected evidence storage, and ALB access logs into that bucket. See [ADR-0027](/docs/0027-governance-evidence-architecture), [Operations — Governance evidence](/docs/operations#3-governance-evidence-backbonegovernancestack), and [Observability architecture](/docs/observability).
+
+Platform logging supports operational observability. Audit-grade retention, aggregation, and cross-system correlation are delegated to client environment configuration.
+
+## Deliberate boundaries and non-goals
+
+Backbone documents security trade-offs so clients can evaluate fit by risk profile.
+
+Current deliberate boundaries include:
+
+1. Internal service traffic encryption is not forced in the baseline. The baseline favors broad compatibility and lower operational friction, while preserving a clear migration path to stronger in-transit controls.
+2. The internet-facing ALB retains an internet-routable endpoint for CloudFront origin connectivity. Ingress uses defense in depth: CloudFront origin-facing IPv4 prefix list on the security group plus origin verification at the listener (see [CloudFront origin protection](#cloudfront-origin-protection-defense-in-depth)). Private ALB plus CloudFront VPC origins remains an optional hardening path for stricter threat models.
+3. Security hardening features that depend on client-specific policy or compliance context remain configurable rather than mandatory defaults.
+
+These boundaries are intentional design choices, not accidental gaps, and are documented through architecture decision records in [architecture/ADRs.md](/docs/adrs). The platform supports incremental adoption of stronger controls based on client maturity and threat model.
+
+### Explicit non-goals
+
+Backbone baseline does not:
+
+- mandate mTLS or service mesh adoption
+- provide managed SOC, SIEM, or incident response operations
+- assert compliance certification coverage for every client workload
+- replace application-level authorization design in domain services
+
+## Shared responsibility and client actions
+
+Backbone provides a strong baseline. Client teams should still implement:
+
+- environment-specific data classification and retention policy
+- production TLS and certificate lifecycle governance for all endpoints
+- organization-level logging, SIEM integration, and alert response runbooks
+- key management and rotation controls aligned with compliance requirements
+- workload-specific authorization rules beyond platform defaults
+
+## Security maturity roadmap alignment
+
+Security posture evolves through ADR-driven changes. Remaining enhancements such as SIEM reference patterns are tracked on the roadmap.
+
+For the platform architecture context behind these decisions, review the ADR index in [architecture/ADRs.md](/docs/adrs).
+
+## Security control status matrix
+
+This matrix summarizes security-relevant platform controls and maturity state for architecture and procurement review.
+
+Status meaning:
+
+- Implemented: baseline enforced by current platform implementation
+- Extensible: hardening supported through code and infrastructure extension in the client-owned fork
+- Planned: baseline enhancement tracked on the roadmap
+
+| Control                                                             | Status      | Notes                                                                                                                                            |
+|---------------------------------------------------------------------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| Least-privilege IAM (`no Action: "*"`)                              | Implemented | Repository-authored baseline enforced; wildcard exceptions are bounded and documented.                                                           |
+| OIDC-based CI and CD deployment identity                            | Implemented | GitHub Actions role assumption uses constrained OIDC trust, not long-lived AWS keys.                                                             |
+| Public edge protection (CloudFront WAF and TLS)                     | Implemented | Edge WAF host filtering, rate limiting, and geo controls on the CloudFront distribution.                                                         |
+| CloudFront origin verification and ALB ingress restriction          | Implemented | Defense in depth: WAF at edge; IPv4 CloudFront prefix list on internet-facing ALB SG; origin verification at ALB listener (primary origin gate). |
+| Static UI delivery of S3 with OAC                                   | Implemented | Private encrypted bucket; no public object access; CloudFront default origin.                                                                    |
+| Internal service authentication and authorization                   | Implemented | Application-layer JWT validation and service authorization controls are active.                                                                  |
+| Runtime isolation and container non-root baseline                   | Implemented | Fargate private-subnet deployment with non-root container runtime baseline.                                                                      |
+| Edge access logging (CloudFront and S3)                             | Implemented | CloudFront access logs and S3 server access logs for static edge and datastore buckets.                                                          |
+| Internal traffic encryption (HTTPS and mTLS for service-to-service) | Extensible  | Transport hardening available through client-owned code and infrastructure extension.                                                            |
+| Customer-managed KMS key strategy                                   | Extensible  | Supported through client-owned key management and infrastructure extension.                                                                      |
+| ALB access logging baseline                                         | Implemented | When `governanceEvidenceEnabled` is true; omitted when operators use org-wide evidence stores.                                                   |
+| CloudTrail baseline (regional + global IAM/STS)                     | Implemented | When `governanceEvidenceEnabled` is true; disable when landing zone provides org trail. Set per env in `platform-config.yml`.                    |
+| SIEM integration reference pattern                                  | Documented  | Described under common operator extensions in [Observability architecture](/docs/observability).                                                 |
+
+## IAM wildcard policy
+
+Audit date: 2026-06-17
+
+### Validation result
+
+- No repository-authored IAM statement uses `Action: "*"` or `NotAction`.
+- Wildcards are limited to resource patterns where AWS requires account-scope permissions or where controlled naming patterns are required.
+
+### Exception categories
+
+Bounded wildcard usage appears only where AWS APIs require it:
+
+- **ECR token retrieval** — account-scoped authorization token APIs
+- **SES send operations** — account-scoped email send APIs
+- **CloudFormation stack exports** — account-scoped listing used by CI/CD workflows
+- **Secrets Manager ARN matching** — suffix patterns required by AWS secret ARN format for least-privilege task and CI roles
+
+Each exception is documented with rationale in infrastructure code and cdk-nag suppressions where applicable.
+
+### Ongoing review expectation
+
+Any new IAM wildcard usage must include one of the following:
+
+- an AWS API constraint that prevents narrower resource scoping, or
+- a deterministic naming constraint with bounded prefix or suffix matching.
+
+Each case should include an inline rationale and corresponding cdk-nag suppression reason where applicable.
+
+## Further reading
+
+- [Architecture decision records](/docs/adrs)
+- [AWS Well-Architected Framework — Security pillar](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html) — AWS Documentation
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/) — OWASP Foundation
+- [OWASP API Security Top 10](https://owasp.org/API-Security/) — OWASP Foundation

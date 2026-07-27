@@ -1,0 +1,8 @@
+- performance
+  - perf-test-plan
+  - perf-test-design
+  - local-jvm-baseline-mix-50vu-load3m-summary
+  - ecs-native-baseline-mix-50vu-load3m-summary
+  - ecs-native-baseline-mix-50vu-load3m-envelope
+  - ecs-native-baseline-mix-100vu-load3m-envelope
+  - ecs-native-baseline-mix-200vu-load3m-envelope
