@@ -12,6 +12,8 @@ Backbone is not a framework. It is a production system you fork and run.
 
 You fork the platform, deploy it into your own AWS accounts, and keep full ownership of the infrastructure, services, and data.
 
+### Quick start
+
 <Cards columns={3}>
   <Card title="Development" icon="fa-laptop-code" href="/docs/development">
     Run Backbone locally.
