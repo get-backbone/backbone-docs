@@ -9,7 +9,7 @@ For GitHub and AWS setup, CDK in both LocalStack (development) and AWS (upstream
 
 For a compact task index, see [CHEATSHEET.md](/docs/cheatsheet).
 
-For **verified** platform capabilities see [architecture/FEATURES.md](/docs/features); for how-to guides (auth, metrics, health, …) see [README.md](/docs/welcome) (**In-depth guides**). For the ADR index see [architecture/ADRs.md](/docs/adrs).
+For **verified** platform capabilities see [FEATURES.md](/docs/features); for how-to guides see [Welcome - Start here](/docs/welcome#start-here). For the ADR index see [ADRs.md](/docs/adrs).
 
 ## Table of Contents
 

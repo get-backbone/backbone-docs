@@ -3,9 +3,9 @@ title: "Platform features"
 summary: "For a high-level executive overview of Backbone features, see the README intro."
 ---
 
-For a high-level executive overview of Backbone features, see the [README](/docs/welcome#what-you-get-at-a-glance) intro.
+For a high-level overview of Backbone, see the [Welcome](/docs/welcome#what-you-get) page.
 
-For deeper how-to material on Backbone's various capabilities, see the in-depth [Architecture Guides](/docs/welcome#in-depth-architecture-guides).
+For how-to guides, start from [Welcome - Start here](/docs/welcome#start-here).
 
 For Architecture Decision Records, see [ADRs.md](/docs/adrs).
 

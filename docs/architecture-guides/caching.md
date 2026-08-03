@@ -84,7 +84,7 @@ Edge-level rate limiting (CloudFront WAF) remains in place independently; see [R
 
 ## Security and compliance considerations
 
-- **Encryption in transit** — Redis connections use TLS in integration and production environments.
+- **Encryption in transit** — Redis connections use TLS in deployed environments.
 - **Network isolation** — ElastiCache runs in private subnets; it is not internet-facing.
 - **Sensitive data** — Token cache keys use hashes rather than storing full bearer tokens in Redis key names.
 - **Shared infrastructure** — Operators manage one Redis cluster for both caching and rate limiting; capacity planning should account for combined use.

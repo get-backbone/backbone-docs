@@ -61,6 +61,22 @@ Metrics are consistent across services so dashboards can compare behaviour betwe
 
 INT deliberately does not deploy the managed observability stack or enable exporters — integration testing does not require production observability infrastructure.
 
+## Bundled Grafana dashboards
+
+| Dashboard                | Role                                                                 |
+|--------------------------|----------------------------------------------------------------------|
+| Platform Overview        | Golden signals: rate, 5xx %, p95, throttle violations                |
+| Quarkus HTTP             | Request rate, latency, status (service filter)                       |
+| Domain Operations        | Auth, actor, document domain counters                                |
+| Rate Limiting            | Throttle / rate-limit views                                          |
+| Database                 | DB ops and Agroal pool (by service)                                  |
+| Redis & Circuit Breakers | Redis client metrics, circuit breakers                               |
+| Notification Delivery    | Delivery by channel, provider, reason, failure ratio                 |
+| Audit Delivery           | Ingest/dispatch lifecycle by event type, severity, reason            |
+| Platform Ops             | ALB / ECS / RDS CloudWatch SEARCH + thin X-Ray Trace Statistics (AMG) |
+| Process Runtime          | Process/CPU/uptime for native ECS (primary in TEST/PROD)             |
+| Quarkus JVM              | Heap/GC for local `quarkus:dev` and `BACKBONE_ECS_RUNTIME_MODE=jvm`  |
+
 Infrastructure alarms (load balancers, databases, WAF, and similar) use **CloudWatch and SNS**, independent of AMP. See [Infrastructure monitoring](/docs/monitoring).
 
 ## Security and access
