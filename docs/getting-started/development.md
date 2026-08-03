@@ -331,7 +331,7 @@ For the complete task index, see [CHEATSHEET.md](/docs/cheatsheet).
    - It is generally resolved with the following clean build command, which stops the maven daemon and clears the cache:
 
 ```bash
-task build:nuke build:clean build:install
+task build:clean build:nuke build:install
 ```
 
 ## Useful Debugging Commands
