@@ -32,7 +32,7 @@ Application audit records business-domain events such as authentication, registr
 
 ### Governance evidence
 
-Backbone's governance evidence capability uses CloudTrail, load-balancer access logs, and protected evidence storage. Deployments may disable this capability when equivalent organization-wide evidence stores already exist. Deployment scope, account boundaries, and flag defaults are in [Operations — Governance evidence](/docs/operations#3-governance-evidence-backbonegovernancestack) and [ADR-0027](/docs/0027-governance-evidence-architecture).
+Backbone's governance evidence capability uses CloudTrail, load-balancer access logs, and protected evidence storage. Deployments may disable this capability when equivalent organization-wide evidence stores already exist. Deployment scope, account boundaries, and flag defaults are in [Operations — Governance evidence](/docs/operations#4-governance-evidence-backbonegovernancestack) and [ADR-0027](/docs/0027-governance-evidence-architecture).
 
 ### Three independent audit and evidence streams (do not conflate)
 

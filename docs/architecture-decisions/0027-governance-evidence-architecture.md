@@ -72,7 +72,7 @@ CloudTrail records **account-level** API activity. Backbone cannot filter trails
 | Shared account with unrelated workloads in the same region | Accept broader logs or use a dedicated account.                                                                  |
 | Enterprise landing zone with org CloudTrail → log archive  | Set `governanceEvidenceEnabled: false`; use centralized evidence and re-point ALB logging in a fork if required. |
 
-Backbone operates at the application platform layer, not as a landing zone. See [Operations — Governance evidence](/docs/operations#3-governance-evidence-backbonegovernancestack).
+Backbone operates at the application platform layer, not as a landing zone. See [Operations — Governance evidence](/docs/operations#4-governance-evidence-backbonegovernancestack).
 
 ### Three independent evidence streams (do not merge)
 

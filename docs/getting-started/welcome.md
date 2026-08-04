@@ -31,7 +31,7 @@ You fork the platform, deploy it into your own AWS accounts, and keep full owner
 - ECS (Elastic Container Service) Fargate deployment model
 - GitHub Actions CI/CD with OIDC (OpenID Connect) based AWS access
 - AWS CDK (Cloud Development Kit) infrastructure code
-- LocalStack-powered local development
+- Floci-powered local development
 - Authentication, audit, notification, and document services
 - Prometheus and Grafana observability
 - A reference web application you can run locally or deploy immediately
@@ -82,7 +82,7 @@ These guides cover how Backbone is built, how it runs, and how to extend it.
     Local setup, tooling, licence, and Quarkus workflow.
   </Card>
   <Card title="Operations" icon="fa-gears" href="/docs/operations">
-    Deployments, GitHub OIDC (OpenID Connect), AWS, LocalStack, CDK.
+    Deployments, GitHub OIDC (OpenID Connect), AWS, Floci, CDK.
   </Card>
   <Card title="Security" icon="fa-shield-halved" href="/docs/security">
     Platform security posture, least privilege, documented trade-offs.

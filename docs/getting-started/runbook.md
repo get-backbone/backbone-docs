@@ -74,8 +74,8 @@ Only specify `--with-rds` if your domain service requires Flyway / Hibernate / P
 
 ### Naming rules
 
-| Input            | Module / artifactId | Java package               | Port env var          | Dev task alias | Internal ALB path |
-|------------------|---------------------|----------------------------|-----------------------|----------------|-------------------|
+| Input            | Module / artifactId | Java package                  | Port env var          | Dev task alias | Internal ALB path |
+|------------------|---------------------|-------------------------------|-----------------------|----------------|-------------------|
 | `search-service` | `search-service`    | `io.backbone.services.search` | `SEARCH_SERVICE_PORT` | `dev:search`   | `/search/*`       |
 | `quote-engine`   | `quote-engine`      | `io.backbone.services.quote`  | `QUOTE_ENGINE_PORT`   | `dev:quote`    | `/quote/*`        |
 
@@ -84,7 +84,7 @@ Only specify `--with-rds` if your domain service requires Flyway / Hibernate / P
 - `.mertrc` layout (add `task dev:<alias>` when you want it in `mert start`)
 - BFF routes and `libs/domain-clients` REST clients
 - Grafana JVM dashboard panels
-- CI LocalStack IT module lists (only when the service adds LocalStack ITs)
+- CI Floci IT coverage (only when the service adds Floci ITs)
 - CDK deploy / first environment rollout
 
 ### Local run your domain service

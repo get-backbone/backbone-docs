@@ -5,7 +5,7 @@ summary: "A comprehensive guide for setting up and working with the Backbone pla
 
 A comprehensive guide for setting up and working with the Backbone platform.
 
-For GitHub and AWS setup, CDK in both LocalStack (development) and AWS (upstream environments) and local Prometheus and Grafana, see [OPERATIONS.md](/docs/operations).
+For GitHub and AWS setup, CDK against Floci (local) or AWS (upstream environments), and local Prometheus and Grafana, see [OPERATIONS.md](/docs/operations).
 
 For a compact task index, see [CHEATSHEET.md](/docs/cheatsheet).
 
@@ -23,6 +23,34 @@ For **verified** platform capabilities see [FEATURES.md](/docs/features); for ho
 ---
 
 ## Environment Setup
+
+### Quick start reference (minus the commentary)
+
+```bash
+# bootstrapping
+brew install go-task
+task bootstrap:toolchain
+task bootstrap:mvn
+task lefthook:install
+task bootstrap:licence-install
+task bootstrap:licence-secure
+task bootstrap:platform-config
+task bootstrap:dotenvrc
+
+# infra
+task docker:start -- floci jaeger postgres redis [prometheus grafana]
+task dev:floci
+task seed:floci
+
+# dev servers
+task build:install
+mert start
+
+# tests
+task test:unit
+task seed:it:up
+task test:integration
+```
 
 ### Prerequisites
 
@@ -137,64 +165,25 @@ task bootstrap:dotenvrc
 
 This script sets up, and you will be prompted for:
 - **API Keys**: NVD, OSS Index, LinkedIn
-- **LocalStack**: Auth Token
 - **Quarkus SmallRye Config**: A secret for property encryption; generate using e.g. `openssl rand -base64 32`
 
 **References**:
 - OSS Index API key: <https://ossindex.sonatype.org/doc/auth-required>
 - NVD API key: <https://nvd.nist.gov/developers/request-an-api-key>
-- LocalStack Auth Token: <https://docs.localstack.cloud/aws/getting-started/auth-token/>
 - LinkedIn Authentication [optional]: <https://learn.microsoft.com/en-gb/linkedin/shared/authentication/authentication>
 
-### 7. AWS Cognito
+### 7. Floci Docker Services
 
-LocalStack does not fully support AWS Cognito. You will need to provision AWS Cognito resources in your development sandbox AWS account. This enables localhost Quarkus to talk to Cognito while other dependencies are LocalStack/Docker. This is fully supported in the AWS free tier:
-
-```bash
-task cdk:synth
-task aws:deploy-cognito
-```
-
-Update `.envrc.local` with AWS Cognito params from SSM, created by the Cognito stack you just deployed:
-
-```bash
-task bootstrap:cognito
-```
-
-### 8. Domain DNS delegation
-
-`task aws:deploy-cognito` has a dependency on the `DomainStack`: a Route 53 public hosted zone for the environment subdomain (`<env>.<domainRoot>`) plus an ACM certificate validated by DNS. ACM writes its validation records into the new subdomain hosted zone, but those records are only publicly resolvable once the root domain (`domainRoot` in `config/src/main/resources/platform-config.yml`) delegates the subdomain. Until then the certificate stays in `PENDING_VALIDATION` and the deploy blocks.
-
-Delegate by adding an `NS` record for the subdomain on the root domain, using the four name servers Route 53 assigned to the subdomain hosted zone:
-
-```bash
-# List the delegation name servers for the subdomain hosted zone
-aws route53 list-hosted-zones-by-name --dns-name "int.<domainRoot>.software" \
-  --query 'HostedZones[0].Id' --output text \
-| xargs -I {} aws route53 get-hosted-zone --id {} \
-  --query 'DelegationSet.NameServers' --output text
-```
-
-At the root domain's DNS provider, create an `NS` record named for the subdomain label (e.g. `int`) whose value is those four name servers. When the parent domain is itself a Route 53 hosted zone, add the record there. After delegation propagates, ACM completes validation automatically and the deploy proceeds.
-
-When DomainStack deployment succeeds, you should receive a notification 'DKIM setup SUCCESS for `int.<domainRoot>` in the specified region.'
-
-**References**:
-- Route 53 subdomain delegation: <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html>
-- ACM DNS validation: <https://docs.aws.amazon.com/acm/latest/userguide/dns-validation.html>
-
-### 9. LocalStack Docker Services
-
-Start required Docker services for local development:
+Start required Docker services for local development. Floci emulates AWS on `:4566` (S3, DynamoDB, SES, SSM, Secrets Manager, Cognito, and more).
 
 #### Service management
 
 Services can be stopped, started, and restarted individually or all at once:
 
 ```bash
-task docker:restart -- localstack jaeger postgres
-task docker:start -- localstack jaeger postgres
-task docker:stop -- localstack jaeger postgres
+task docker:restart -- floci jaeger postgres
+task docker:start -- floci jaeger postgres
+task docker:stop -- floci jaeger postgres
 ```
 
 Service status can be queried with:
@@ -206,13 +195,13 @@ task docker:status
 Example output:
 
 ```terminaloutput
-task: [docker:status] scripts/docker/status.sh localstack jaeger postgres redis prometheus grafana
+task: [docker:status] scripts/docker/status.sh floci jaeger postgres redis prometheus grafana
 
 Docker Container Status
 
 SERVICE      | STATE      | PORTS
 
-localstack   | running    | 4566:4566
+floci        | running    | 4566:4566
 jaeger       | running    | 16686:16686,4317:4317
 postgres     | running    | 5432:5432
 redis        | running    | 6380:6380
@@ -220,21 +209,21 @@ prometheus   | running    | 9090:9090
 grafana      | running    | 3000:3000
 ```
 
-#### Provision LocalStack resources
+#### Provision Floci resources
 
-Provision LocalStack AWS resources (S3 buckets, DynamoDB tables, etc.), and seed development data:
+Create Floci AWS resources (S3, DynamoDB, Cognito pools → SSM/Secrets) and seed development data:
 
 ```bash
-task dev:localstack
-task seed:localstack
+task dev:floci
+task seed:floci
 ```
 
-### 10. Integration test fixtures
+### 8. Integration test fixtures
 
-Once AWS Cognito is provisioned, seed IT fixtures into Cognito and sync actor identities into Postgres `actor.actors` (Cognito holds credentials; Postgres holds actor metadata):
+Seed IT fixtures into Floci Cognito and sync actor identities into Postgres `actor.actors` (Cognito holds credentials; Postgres holds actor metadata):
 
 ```bash
-task seed:it:up -- --target local
+task seed:it:up
 ```
 
 **Prerequisites**: Service `actor-service` needs to have been started to create the `ACTORS` table (via Flyway) in Postgres.
@@ -336,9 +325,9 @@ task build:clean build:nuke build:install
 
 ## Useful Debugging Commands
 
-### LocalStack
+### Floci
 
-1. notification-service:      ➜ `awslocal ses verify-email-identity --email hello@backbonehq.io`
+1. notification-service:      ➜ `awslocal ses verify-email-identity --email hello@backbonehq.io` · inspect mail: `curl http://localhost:4566/_aws/ses`
 2. actor-service:             ➜ `docker exec -it postgres psql -U postgres -d backbone -c "SELECT * FROM actor.actors;"`
 3. document-service:          ➜ `awslocal dynamodb describe-table --table-name DOCUMENTS 2>&1 | grep -A 10 "KeySchema"`
 4. authenticate Docker to ECR ➜

@@ -3,7 +3,7 @@ title: "Operations"
 summary: "Tasks that sit outside day-to-day service development: local metrics (Prometheus and Grafana),"
 ---
 
-Tasks that sit outside day-to-day service development: local metrics (Prometheus and Grafana), CDK against AWS or LocalStack, and one-time GitHub Actions OIDC bootstrap.
+Tasks that sit outside day-to-day service development: local metrics (Prometheus and Grafana), CDK against AWS or Floci, and one-time GitHub Actions OIDC bootstrap.
 
 For machine setup and running Quarkus locally, see [DEVELOPMENT.md](/docs/development).
 
@@ -16,10 +16,11 @@ For step-by-step operational runbook procedures (for example ECS native vs JVM, 
 - [GitHub Setup](#github-setup)
 - [AWS Setup](#aws-setup)
   - [Development Environment `backbone-sandbox` profile](#1-development-environment-backbone-sandbox-profile)
-  - [Managed observability](#2-managed-observability)
-  - [Governance evidence (BackboneGovernanceStack)](#3-governance-evidence-backbonegovernancestack)
+  - [Domain DNS configuration](#2-domain-dns-configuration)
+  - [Managed observability](#3-managed-observability)
+  - [Governance evidence (BackboneGovernanceStack)](#4-governance-evidence-backbonegovernancestack)
 - [CDK and AWS](#cdk-and-aws)
-- [CDK and LocalStack](#cdk-and-localstack)
+- [CDK and Floci](#cdk-and-floci)
 - [Local metrics](#local-metrics)
 
 ---
@@ -64,7 +65,6 @@ External third-party secrets:
 - `OSS_INDEX_API_KEY` - OSS Index API key for dependency scanning; see [OSS Index - Auth Required](https://ossindex.sonatype.org/doc/auth-required)
 - `OSS_INDEX_USER` - OSS Index username
 - `CODECOV_TOKEN` - Codecov token for coverage reporting; see [Codecov](https://codecov.io/)
-- `LOCALSTACK_AUTH_TOKEN` - LocalStack auth token for integration tests; see [LocalStack - Auth Token](https://docs.localstack.cloud/aws/getting-started/auth-token/)
 
 Optional secrets: If you wish to retain frontend ability to 'Login with LinkedIn' you must specify:
 - `LINKEDIN_OAUTH2_CLIENT_ID` - LinkedIn Oauth2 client ID; see [LinkedIn - OAUTH 2.0 Overview](https://learn.microsoft.com/en-gb/linkedin/shared/authentication/authentication)
@@ -79,9 +79,11 @@ Because AWS environments vary widely across clients — especially in enterprise
 
 For greenfield teams or startups without established AWS conventions, it is recommended to bootstrap your AWS environments using [Superwerker](https://github.com/superwerker/superwerker), developed by AWS Advanced Partners. Superwerker provides a well-architected baseline with sensible defaults around multi-account structure, security boundaries, and blast radius management.
 
-Backbone does not subscribe to or replace an AWS landing zone model. Every client account layout differs. When you already operate a landing zone (Superwerker, Control Tower, or a custom security OU with a central log archive), map Backbone into that foundation rather than reshaping the organization around Backbone — see [Governance evidence](#3-governance-evidence-backbonegovernancestack) below.
+Backbone does not subscribe to or replace an AWS landing zone model. Every client account layout differs. When you already operate a landing zone (Superwerker, Control Tower, or a custom security OU with a central log archive), map Backbone into that foundation rather than reshaping the organization around Backbone — see [Governance evidence](#4-governance-evidence-backbonegovernancestack) below.
 
-Backbone development makes extensive use of LocalStack (Docker). AWS Cognito is unsupported in LocalStack however, and requires AWS proper; this is available on AWS free tier.
+Backbone local development uses Floci (Docker) on `:4566` for AWS APIs including Cognito.
+Deploy Cognito and Domain DNS into real AWS only for INT/DEV/PROD (or when you need live Cognito outside Floci);
+that path is free-tier eligible — see [Domain DNS configuration](#2-domain-dns-configuration) and `task aws:deploy-cognito` under [CDK and AWS](#cdk-and-aws).
 
 > 💡 **Note:** Backbone currently supports deployment within a single AWS region per environment, including multi-AZ infrastructure patterns for high availability inside that region.
 >
@@ -98,7 +100,31 @@ aws_secret_access_key=********************
 region=us-west-2
 ```
 
-### 2. Managed observability
+### 2. Domain DNS configuration
+
+`DomainStack` provisions a Route 53 public hosted zone for the environment subdomain (`<env>.<domainRoot>`) plus an ACM certificate validated by DNS.
+ACM writes its validation records into the new subdomain hosted zone, but those records are only publicly resolvable once the root domain (`domainRoot` in `config/src/main/resources/platform-config.yml`) delegates the subdomain.
+Until then the certificate stays in `PENDING_VALIDATION` and the deploy blocks.
+When deploying `DomainStack` into an environment for the first time, delegate by adding an `NS` record for the subdomain on the root domain, using the four name servers Route 53 assigned to the subdomain hosted zone:
+
+```bash
+# List the delegation name servers for the subdomain hosted zone
+aws route53 list-hosted-zones-by-name --dns-name "<env>.<domainRoot>" \
+  --query 'HostedZones[0].Id' --output text \
+| xargs -I {} aws route53 get-hosted-zone --id {} \
+  --query 'DelegationSet.NameServers' --output text
+```
+
+At the root domain's DNS provider, create an `NS` record named for the subdomain label (e.g. `int`) whose value is those four name servers. When the parent domain is itself a Route 53 hosted zone, add the record there.
+After delegation propagates, ACM completes validation automatically and the deploy proceeds.
+
+When DomainStack deployment succeeds, you should receive a notification 'DKIM setup SUCCESS for `<env>.<domainRoot>` in the specified region.'
+
+**References**:
+- Route 53 subdomain delegation: <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html>
+- ACM DNS validation: <https://docs.aws.amazon.com/acm/latest/userguide/dns-validation.html>
+
+### 3. Managed observability
 
 Skip when `observabilityEnabled: false` for a stage in `platform-config.yml` (default `true`). When enabled, CDK deploys `ObservabilityStack` (AMP + AMG). Identity Center is only required for Grafana sign-in, not for CDK or other Backbone stacks.
 
@@ -170,7 +196,7 @@ Identity Center `AdministratorAccess` on the AWS account is **not** the same as 
 
 See [Observability architecture](/docs/observability) and [ADR-0026](/docs/0026-observability-backend-strategy).
 
-### 3. Governance evidence (BackboneGovernanceStack)
+### 4. Governance evidence (BackboneGovernanceStack)
 
 **Optional** — enabled by default via `governanceEvidenceEnabled: true` in `config/src/main/resources/platform-config.yml`. When `true`, CDK deploys `GovernanceStack`: a KMS-encrypted evidence bucket for CloudTrail, an SSE-S3 companion bucket for ALB access logs (ALB does not support KMS log destinations), a **regional** CloudTrail trail (with global IAM/STS events), and ALB access logging on the public and internal load balancers into that companion bucket.
 
@@ -223,7 +249,7 @@ GitHub Actions needs GitHubRoleStack to exist first; bootstrap it manually once 
 
 DEV is the usual stage for local CDK defaults; CI/CD runs with `BACKBONE_STAGE_ENV=INT` (see [01-infra-bootstrap.yml](https://github.com/get-backbone/backbone-platform/blob/main/.github/workflows/01-infra-bootstrap.yml)).
 
-Use this section’s `task aws:*` tasks for AWS CDK deploys — the same shape as CI. Use [CDK and LocalStack](#cdk-and-localstack) for LocalStack-only CDK development.
+Use this section’s `task aws:*` tasks for AWS CDK deploys — the same shape as CI. Use [CDK and Floci](#cdk-and-floci) for Floci-only CDK development.
 
 ```bash
 task cdk:install                                   # npm install in infra/ (CI and real AWS)
@@ -237,17 +263,17 @@ task aws:deploy-domain                             # deploy Domain stack (requir
 
 ---
 
-## CDK and LocalStack
+## CDK and Floci
 
-CDK work is usually done against AWS free tier. LocalStack CDK is supported for development and testing.
+CDK work is usually done against AWS free tier. Floci `cdklocal` is supported for development and testing.
 
 ```bash
 task cdk:install                                   # install Node dependencies and verify cdklocal
-task cdk:bootstrap                                 # LocalStack cdklocal bootstrap
+task cdk:bootstrap                                 # Floci cdklocal bootstrap
 
-task cdk:deploy-all                                # deploy all stacks (LocalStack)
+task cdk:deploy-all                                # deploy all stacks (Floci)
 task cdk:deploy-ecr
-# task cdk:deploy-cognito intentionally omitted as unsupported in LocalStack
+task cdk:deploy-cognito
 task cdk:deploy-domain
 task cdk:deploy-network
 task cdk:deploy-datastore
@@ -257,7 +283,7 @@ task cdk:deploy-runtime
 
 ## Local metrics
 
-Prometheus and Grafana run in the same local Docker stack as LocalStack, Jaeger, and Postgres (not emulated AWS services).
+Prometheus and Grafana run in the same local Docker stack as Floci, Jaeger, and Postgres (not emulated AWS services).
 
 **IaC for Metrics is a priority on the internal release roadmap.**
 

@@ -235,7 +235,7 @@ Organization-level controls expected outside baseline platform constructs (or wh
 - ALB access logging to operator-owned buckets and lifecycle controls
 - SIEM integration, alerting, and incident response workflow
 
-Backbone provisions an optional **regional** CloudTrail trail, protected evidence storage, and ALB access logs into that bucket. See [ADR-0027](/docs/0027-governance-evidence-architecture), [Operations — Governance evidence](/docs/operations#3-governance-evidence-backbonegovernancestack), and [Observability architecture](/docs/observability).
+Backbone provisions an optional **regional** CloudTrail trail, protected evidence storage, and ALB access logs into that bucket. See [ADR-0027](/docs/0027-governance-evidence-architecture), [Operations — Governance evidence](/docs/operations#4-governance-evidence-backbonegovernancestack), and [Observability architecture](/docs/observability).
 
 Platform logging supports operational observability. Audit-grade retention, aggregation, and cross-system correlation are delegated to client environment configuration.
 

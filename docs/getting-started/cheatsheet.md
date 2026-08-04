@@ -32,14 +32,6 @@ task bootstrap:platform-config                     # configure interactive platf
 task bootstrap:dotenvrc                            # generate .envrc.local from API keys and secrets
 ```
 
-### Cognito (free tier AWS; unsupported in LocalStack)
-
-```bash
-task cdk:synth
-task aws:deploy-cognito                            # deploy Cognito Stack
-task bootstrap:cognito                             # refresh Cognito pool ids in .envrc.local (post aws:deploy-cognito)
-```
-
 ## Bootstrap GitHub env
 
 Commentary, prerequisites, and follow-on setup are in [OPERATIONS.md — GitHub Setup](/docs/operations#github-setup).
@@ -52,14 +44,14 @@ BACKBONE_STAGE_ENV=INT task aws:deploy-github-role    # deploy GitHub OIDC role
 ## Local development
 
 ```bash
-task docker:restart -- localstack jaeger postgres  # restart listed docker containers
-task docker:start -- localstack jaeger postgres
-task docker:stop -- localstack jaeger postgres
+task docker:restart -- floci jaeger postgres       # restart listed docker containers
+task docker:start -- floci jaeger postgres
+task docker:stop -- floci jaeger postgres
 task docker:status                                 # docker container status and ports for all services
 
-task dev:localstack                                # create LocalStack development resources
-task seed:localstack                               # seed LocalStack development resources
-task seed:it:up -- --target local                  # IT fixtures (Cognito + local Postgres)
+task dev:floci                                     # create Floci development resources
+task seed:floci                                    # seed Floci development resources
+task seed:it:up                                    # IT fixtures (Floci Cognito + Postgres)
 
 task build:nuke                                    # delete the Maven build cache + stop mvn daemons
 task build:clean
@@ -128,16 +120,17 @@ task aws:grant-observability -- you@example.com    # grant AMG workspace Admin (
 task aws:hibernate                                 # delete non-prod runtime + foundation tier CFN stacks (cost-optimisation)
 ```
 
-### LocalStack local development
+### Floci local CDK development
 
-CDK development is predominantly done directly in AWS free tier. However, LocalStack CDK is supported and can be used for development and testing.
+CDK development is predominantly done directly in AWS free tier. Floci `cdklocal` is supported for development and testing.
 
 ```bash
 task cdk:install                                   # install Node dependencies and verify cdklocal
-task cdk:bootstrap                                 # LocalStack cdklocal bootstrap
+task cdk:bootstrap                                 # Floci cdklocal bootstrap
 
-task cdk:deploy-all                                # deploy all stacks (LocalStack)
+task cdk:deploy-all                                # deploy all stacks (Floci)
 task cdk:deploy-ecr
+task cdk:deploy-cognito
 task cdk:deploy-domain
 task cdk:deploy-network
 task cdk:deploy-datastore
