@@ -28,7 +28,7 @@ task bootstrap:licence-secure                      # secure the licence file and
 ### Configuration
 
 ```bash
-task bootstrap:platform-config                     # configure interactive platform-config.yml (dev region, DNS, ECS, NAT)
+task bootstrap:platform-config                     # configure interactive platform-config.yml (DNS, ECS, NAT)
 task bootstrap:dotenvrc                            # generate .envrc.local from API keys and secrets
 ```
 

@@ -142,7 +142,6 @@ task bootstrap:platform-config
 ```
 
 This script sets up overall:
-- **AWS region** for local Quarkus development (only): defaults to `us-west-2`
 - **Root domain**: You must set this to your own domain name where you control the DNS.
 
 And baseline values for:
