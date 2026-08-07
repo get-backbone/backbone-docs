@@ -187,12 +187,15 @@ Current baseline runtime posture:
 
 - services run on ECS Fargate tasks, not on shared EC2 container hosts
 - service tasks run in private subnets with no public IP assignment
-- the shared Quarkus runtime image declares a non-root container user (`USER 1000`)
+- shared Quarkus runtime images declare a non-root container user (`USER 1000:1000`) and own runtime paths as UID 1000
+- ECS container definitions pin the same non-root user (`user: 1000:1000`) so the task definition enforces non-root even if an image omits `USER`
 
 Current repository posture on privileged runtime flags:
 
-- no repository-authored task definition sets privileged container mode
+- no repository-authored task definition sets privileged container mode (the field is omitted; Fargate does not support `Privileged` even when false)
 - no repository-authored task definition enables host networking for application services
+- hygiene CI fails builds when Dockerfiles end as root, or when infra sources introduce `privileged: true` or host `NetworkMode`
+- CDK unit tests assert synthesized task definitions use `User: 1000:1000`, `NetworkMode: awsvpc`, and omit `Privileged`
 
 Security interpretation:
 
@@ -202,8 +205,8 @@ Security interpretation:
 Future hardening options for stricter environments:
 
 - read-only root filesystem where service runtime behavior allows it
-- explicit container capability minimization and policy checks
-- CI policy gates that fail builds when privileged runtime flags are introduced
+- explicit container capability minimization beyond the privileged / host-network block
+- account-level AWS Config or SCP controls that reject privileged tasks outside this repository
 
 ## CI/CD and GitHub security posture
 
