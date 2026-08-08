@@ -15,7 +15,7 @@ Backbone ships a security-focused technical baseline designed to support common 
 
 Progress indicators in the tables below reflect **what the platform implements** versus what operators must wire, policy, or evidence in their environment.
 
-Backbone intentionally avoids mandating a specific AWS Organizations layout. Operators may run single-account sandboxes or enterprise multi-account landing zones. Both paths can satisfy control objectives when required controls are implemented and evidenced in the operator environment.
+Backbone operates at the **application platform layer**, not as an AWS landing zone. It intentionally avoids mandating a specific AWS Organizations layout or provisioning account- and organization-level security services — for example AWS Organizations security OUs, AWS Config, Security Hub, GuardDuty, or Shield Advanced. Those controls need org-wide delegated administration, account topology, and often already exist in an enterprise landing zone; Backbone cannot assume that shape without conflicting with operator foundations. Operators may run single-account sandboxes or multi-account landing zones. Both paths can satisfy control objectives when required org-level controls are implemented and evidenced in the operator environment. See [ADR-0027](/docs/0027-governance-evidence-architecture).
 
 ## Shared responsibility
 
@@ -36,9 +36,9 @@ The tables below separate three layers auditors typically ask about:
 
 | Symbol | Meaning                                                                                |
 |:------:|----------------------------------------------------------------------------------------|
-|   ✅    | Implemented in the platform baseline for a standard AWS deployment.                    |
+|   ✅   | Implemented in the platform baseline for a standard AWS deployment.                    |
 |   🟠   | Partial — building blocks exist; operator wiring, policy, or extension still required. |
-|   ❌    | Not in the platform baseline — operator-owned, roadmap item, or integration topic.     |
+|   ❌   | Not in the platform baseline — operator-owned, roadmap item, or integration topic.     |
 
 ## Architectural planes
 
@@ -62,7 +62,6 @@ Auditors often partition systems into planes. The table maps that vocabulary to 
 | ✅ | AWS API access from workloads via short-lived credentials | ECS task roles issue temporary credentials; no long-lived IAM user keys at runtime | Role scoping reviews and evidence per account                 |
 | ❌ | Enterprise SSO (SAML or OIDC IdP federation)              | Cognito-native flows as baseline                                                   | IdP federation design and operation                           |
 | ✅ | CI/CD deployment without long-lived AWS keys              | GitHub Actions OIDC to constrained deployment roles                                | Production approval, segregation of duties, release records   |
-| ❌ | Long-lived IAM user keys for runtime                      | Design favours roles and managed identity                                          | Account hygiene and credential audits                         |
 
 ### Network and edge
 
@@ -78,14 +77,14 @@ Auditors often partition systems into planes. The table maps that vocabulary to 
 
 ### Data protection
 
-|    | Capability                                              | Platform provides                                          | Operator still owns                                   |
-|:--:|---------------------------------------------------------|------------------------------------------------------------|-------------------------------------------------------|
-| ✅ | PostgreSQL encryption at rest                           | Encrypted RDS in private subnets                           | Data classification, key custody if CMK required      |
-| ✅ | Network isolation for relational data                   | Security groups limit database access to application tasks | Tenant boundary design in application layer           |
-| ✅ | Automated relational backups with stage-based retention | Backup retention varies by environment stage               | RPO/RTO targets and restore testing                   |
-| ✅ | DynamoDB and S3 for platform data                       | Default encryption on managed datastores                   | Per-table and per-bucket classification               |
-| 🟠 | Customer-managed KMS keys everywhere                    | AWS-managed encryption patterns in baseline                | CMK strategy where regulators or contracts require it |
-| 🟠 | Row-level tenant isolation                              | Depends on product data model                              | Enforcement of tenant boundaries in domain services   |
+|    | Capability                                              | Platform provides                                                                      | Operator still owns                                                                                     |
+|:--:|---------------------------------------------------------|----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| ✅ | PostgreSQL encryption at rest                           | Encrypted RDS in private subnets                                                       | Data classification, key custody if CMK required                                                        |
+| ✅ | Network isolation for relational data                   | Security groups limit database access to application tasks                             | Tenant boundary design in application layer                                                             |
+| ✅ | Automated relational backups with stage-based retention | Backup retention varies by environment stage                                           | RPO/RTO targets and restore testing                                                                     |
+| ✅ | DynamoDB and S3 for platform data                       | Default encryption on managed datastores                                               | Per-table and per-bucket classification                                                                 |
+| ❌ | Customer-managed KMS keys everywhere                    | Not in platform baseline; AWS-managed keys in the standard deploy                      | CMK via fork/extension where regulators or contracts require it                                         |
+| ✅ | Single-tenant deployment isolation                      | One client environment per owned AWS account; VPC and data plane scoped to that deploy | If the fork later becomes multi-tenant in-process, row/org isolation in domain services and data models |
 
 ### Secrets and configuration
 
@@ -131,19 +130,18 @@ Auditors often partition systems into planes. The table maps that vocabulary to 
 
 ### Data subject rights and retention
 
-|    | Capability                         | Platform provides                                                                                          | Operator still owns                                 |
-|:--:|------------------------------------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| 🟠 | User deletion in identity layer    | Cognito user removal in auth flows                                                                         | Erasure across RDS, DynamoDB, S3, and backups       |
-| ❌ | Personal data export API           | No single cross-store export                                                                               | Articles 15 and 20 procedures and product features  |
-| 🟠 | Legal retention and hold           | Stage-aware backup and removal policies                                                                    | Legal hold, retention schedules, and counsel review |
-| ✅ | Notification unsubscribe integrity | Opaque tokens without PII in URLs — [ADR-0019](/docs/0019-notification-service-unsubscribe-token-security) | Consent records and marketing compliance            |
+|    | Capability                         | Platform provides                                                                                          | Operator still owns                                                                                   |
+|:--:|------------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| ❌ | Right to erasure                   | No account-deletion or cross-store erasure API                                                             | Operator procedures (and product features) for Art. 17 across Cognito, RDS, DynamoDB, S3, and backups |
+| ❌ | Personal data export API           | No single cross-store export                                                                               | Articles 15 and 20 procedures and product features                                                    |
+| ❌ | Legal retention and hold           | No legal-hold or counsel-driven retention controls in baseline                                             | Retention schedules, legal hold, and counsel review                                                   |
+| ✅ | Notification unsubscribe integrity | Opaque tokens without PII in URLs — [ADR-0019](/docs/0019-notification-service-unsubscribe-token-security) | Consent records and marketing compliance                                                              |
 
 ### Messaging and multi-account posture
 
 |    | Capability                                                    | Platform provides                                                                                                              | Operator still owns                                  |
 |:--:|---------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
 | ✅ | Transactional notifications with templates and rate awareness | [Notifications](/docs/notifications), provider throttling — [ADR-0016](/docs/0016-notification-service-rate-limiting-strategy) | Content policy, bounce handling, subprocessors       |
-| ❌ | Queue-based internal transport as default                     | Synchronous REST baseline — [ADR-0008](/docs/0008-decoupling-micro-services-transitioning-from-rest-to-sqs)                    | Reliability and async requirements                   |
 | ❌ | AWS Organizations security OU layout                          | Not generated by platform CDK                                                                                                  | Landing zone, log archive, security tooling accounts |
 | ❌ | AWS Config, Security Hub, GuardDuty                           | Not provisioned in baseline                                                                                                    | Org-wide posture and finding remediation             |
 
