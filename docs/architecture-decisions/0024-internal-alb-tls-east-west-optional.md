@@ -11,7 +11,7 @@ summary: "The runtime uses an internal-facing Application Load Balancer in priva
 
 The runtime uses an **internal-facing Application Load Balancer** in **private subnets** for **service-to-service** and **browser-to-API** paths that are routed by hostname and path rules. Traffic stays **inside the VPC** between **Fargate** tasks and the internal ALB.
 
-**TLS on the internet-facing ALB** is **required** for browser-facing HTTPS and is **implemented** (ACM certificate, HTTPS listener, HTTP to HTTPS redirect). That work establishes a **repeatable pattern**: ACM in the same region as the ALB, listeners, and task **client** configuration using the **correct scheme** (for example **CORS** `Origin` matching **https** for the public hostname).
+**TLS on the internet-facing ALB** is **required** for browser-facing HTTPS and is **implemented** (ACM certificate, HTTPS listener on port 443; no public HTTP listener). Viewer HTTP→HTTPS redirect is enforced at **CloudFront** (`REDIRECT_TO_HTTPS`), not via an ALB :80 redirect. That work establishes a **repeatable pattern**: ACM in the same region as the ALB, listeners, and task **client** configuration using the **correct scheme** (for example **CORS** `Origin` matching **https** for the public hostname).
 
 **TLS on the internal ALB** adds **encryption in transit** for **east-west** hops and raises the bar against **passive** observation or trivial **in-VPC** manipulation of cleartext. It does **not** replace **service authentication**, **stateless** tokens, or **least-privilege IAM**; those controls prove **who** is calling. **Defense in depth** combines **identity** with **confidentiality** on the wire.
 
@@ -39,11 +39,11 @@ This ADR avoids implying that **listener-only HTTPS** equals **end-to-end** encr
 
 ## **Decision**
 
-1. **Baseline CDK keeps the internal ALB on HTTP** for listeners between tasks and the internal ALB. This matches the **current** `addInternalAlbListener` shape (`http://` to the internal ALB DNS name).
+1. **Default baseline keeps the internal ALB on HTTP** (`internalHttps: false` in `platform-config.yml`) for listeners between tasks and the internal ALB, using the raw ELB DNS name over `http://`.
 
-2. **HTTPS on the internal ALB is optional** and **customer-owned** when **compliance**, **threat model**, or **policy** require **east-west** encryption. Teams may adopt it by **following the same TLS pattern** already proven on the **public** ALB (certificate, listeners, clients, and **scheme-correct** configuration such as CORS or callback URLs where relevant).
+2. **HTTPS on the internal ALB is a first-class platform opt-in** via `baseline.internalHttps` (or a per-env override). When `true`, CDK provisions a public ACM certificate for `api.{env}.{root}` (DNS validation in the public hosted zone), a **private** hosted zone apex alias to the Internal ALB (VPC-only resolution), an HTTPS:443 listener, security-group ingress on 443, and `BACKBONE_INTERNAL_ALB_URL=https://api.{env}.{root}` for REST clients. Target groups remain HTTP to Fargate (listener-only TLS).
 
-3. **No requirement** that every Backbone deployment enable internal TLS. The **reference** implementation **demonstrates** public-edge TLS; **internal** TLS remains an **extension** for clients who need it.
+3. **No requirement** that every Backbone deployment enable internal TLS. Operators flip the flag when compliance or threat model requires east-west encryption on the ALB hop.
 
 ---
 
@@ -65,7 +65,7 @@ The baseline choice is **deliberately** HTTP on the internal ALB. The following 
 - **Compliance** or customer policy expects **encryption in transit** end-to-end (for example **SOC 2**, **HIPAA**, or equivalent regimes; exact scope is **customer** legal interpretation).
 - The organization assumes **workload compromise** is plausible and wants **defense in depth** against **passive** collection or trivial tampering **on the wire** inside the VPC (internal TLS raises the bar; it does **not** remove the need for **authn** and **authz**).
 
-**Customer-owned action:** teams that hit the **strongly recommended** row should plan **HTTPS** (or **mTLS**) on the internal **listener** using the **same certificate and listener pattern** as the internet-facing ALB, plus **https://** internal base URLs for REST clients and any health checks that target that listener. If **policy** requires **encryption all the way to the task**, they must also plan **HTTPS target groups** (and **TLS** on the application) or **mesh** / **mTLS**, as described in **ALB TLS termination and the hop to targets** above.
+**Customer-owned action:** set `internalHttps: true` in `platform-config.yml` (baseline or per-env) and redeploy Domain + Security + Runtime stacks together. Flipping the flag changes listener port, DNS, certificate, and all task `BACKBONE_INTERNAL_ALB_URL` values in one cut — treat it as a planned change, not a hot toggle. If **policy** requires **encryption all the way to the task**, teams must also plan **HTTPS target groups** (and **TLS** on the application) or **mesh** / **mTLS**, as described in **ALB TLS termination and the hop to targets** above.
 
 ---
 

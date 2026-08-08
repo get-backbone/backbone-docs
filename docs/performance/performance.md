@@ -1,5 +1,5 @@
 ---
-title: "Performance Testing Summary (ECS Native + k6)"
+title: "Performance Testing Summary"
 summary: "We executed a structured performance test plan against Backbone deployed on AWS ECS (GraalVM native) using k6"
 ---
 

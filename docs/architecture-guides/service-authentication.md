@@ -56,7 +56,7 @@ Bootstrap endpoints (login, registration, token refresh) do not forward identity
 2. **Least privilege** — Caller allowlists name the only services permitted for sensitive operations.
 3. **Assume breach** — Stolen user credentials alone cannot satisfy service-only endpoints; service credentials are a separate trust domain.
 
-Transport between services today uses HTTP on the internal load balancer with **application-layer JWT validation**. Optional internal TLS is documented in [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
+Transport between services today uses HTTP on the internal load balancer by default (`internalHttps: false`), with **application-layer JWT validation**. Opt-in internal HTTPS is documented in [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
 
 ## Relationship to user authentication
 

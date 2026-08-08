@@ -226,6 +226,12 @@ environments:
     governanceEvidenceEnabled: false
 ```
 
+### Internal ALB HTTPS (`internalHttps`)
+
+Default is `internalHttps: false` (HTTP:80 on the private ALB, raw ELB DNS in `BACKBONE_INTERNAL_ALB_URL`). Set `internalHttps: true` on baseline or a per-env override to enable listener HTTPS:443 with a public ACM certificate for `api.{env}.{domainRoot}`, a private hosted zone for VPC-only resolution, and `https://api.{env}.{domainRoot}` for service REST clients.
+
+Flipping the flag is **disruptive**: redeploy Domain, Security, and Runtime together so certificate, security-group port, listener, private DNS, and task env URLs stay aligned. Target groups remain HTTP to Fargate (listener-only TLS). See [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
+
 See [ADR-0027: Governance evidence architecture](/docs/0027-governance-evidence-architecture) and [Platform security posture](/docs/security).
 
 ---

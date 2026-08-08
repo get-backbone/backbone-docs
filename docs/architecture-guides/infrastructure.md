@@ -73,7 +73,7 @@ See [Application caching and distributed scale](/docs/caching) and [Rate limitin
 - **Public edge:** CloudFront with WAF (hostname allowlist, rate limits, geo controls).
 - **Origin protection:** CloudFront-to-ALB verification header; ALB security groups restrict source to CloudFront edge ranges.
 - **Internal traffic:** Service-to-service calls use an internal load balancer; JWT validation at the application layer (not network trust alone).
-- **Optional internal TLS:** Documented as a hardening step in [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
+- **Optional internal TLS:** Opt-in via `internalHttps` in `platform-config.yml` ([ADR-0024](/docs/0024-internal-alb-tls-east-west-optional)).
 
 Full edge and IAM posture: [Platform security posture](/docs/security).
 

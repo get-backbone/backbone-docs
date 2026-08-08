@@ -62,8 +62,8 @@ This keeps branding and UX in your product while Cognito still issues standard O
 
 ### LinkedIn OAuth2
 
-1. User starts LinkedIn sign-in from the product UI.
-2. After LinkedIn callback, auth-service issues a **temporary, single-use token** to the browser (not a long-lived JWT in the URL).
+1. User starts LinkedIn sign-in from the product UI. auth-service redirects to LinkedIn with a random **`state`** value for CSRF protection.
+2. After LinkedIn callback, auth-service validates `state`, then issues a **temporary, single-use token** to the browser (not a long-lived JWT in the URL).
 3. Browser exchanges the temporary token for Cognito JWTs via a dedicated endpoint.
 
 Temporary tokens expire quickly and are invalidated on first use — reducing exposure in redirect URLs.
@@ -87,6 +87,7 @@ These apply to **human identity** specifically. Platform-wide edge and network a
 2. **Least privilege** — Authentication proves identity; authorization rules apply at the resource layer.
 3. **Assume breach** — Tokens are short-lived and refreshable; a compromised user token does not grant service-to-service identity (see [Service authentication](/docs/service-authentication)).
 4. **No network trust** — Source IP and VPC location are not treated as proof of user identity.
+5. **CSRF model** — API credentials are Bearer JWTs from `localStorage`, not cookies, so classic cookie CSRF does not apply to BFF/API calls. LinkedIn OAuth uses a validated `state` parameter. XSS (token theft) is the primary browser threat and is addressed with edge CSP; see [Platform security posture](/docs/security#csrf-posture).
 
 User JWT validation results are cached in Redis across ECS tasks for performance; see [Application caching and distributed scale](/docs/caching).
 
@@ -96,7 +97,7 @@ User JWT validation results are cached in Redis across ECS tasks for performance
 |-------------------------|------------------------------------------------------------------------------------|
 | **Identity provider**   | Cognito user pool per environment; password policy configured in CDK               |
 | **Social login**        | LinkedIn developer app credentials supplied as deployment secrets                  |
-| **Token storage**       | Browser clients responsible for secure storage; XSS remains an application concern |
+| **Token storage**       | Browser `localStorage` for JWTs; XSS mitigated with CSP (not cookie CSRF tokens)   |
 | **Future enhancements** | MFA, passkeys, and centralized revocation are roadmap items, not baseline          |
 
 ## Further reading

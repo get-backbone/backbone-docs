@@ -77,7 +77,7 @@ Current ingress posture is explicit and narrow:
 
 See [CloudFront origin protection (defense in depth)](#cloudfront-origin-protection-defense-in-depth) for how security-group rules combine with listener and edge controls.
 
-The current internal ALB path uses HTTP (`80`) for service-to-service calls. Identity and authorization remain enforced at the application layer through JWT validation and service authorization checks. HTTPS on the internal path is an available hardening step documented in [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
+The current internal ALB path uses HTTP (`80`) by default (`internalHttps: false`). Identity and authorization remain enforced at the application layer through JWT validation and service authorization checks. HTTPS on the internal listener is enabled by setting `internalHttps: true` in `platform-config.yml` ([ADR-0024](/docs/0024-internal-alb-tls-east-west-optional)).
 
 Baseline implication: confidentiality of internal service traffic is not guaranteed by default transport settings and should be hardened for environments with stricter compliance or threat requirements.
 
@@ -113,6 +113,11 @@ Host allowlist validation at the edge is a hygiene and traffic-shaping control f
 
 API path behaviors on the distribution forward to the internet-facing ALB origin over HTTPS. Static UI assets are served from a private S3 bucket through Origin Access Control (OAC); the bucket blocks public access, enforces SSL, and uses server-side encryption.
 
+CloudFront attaches a **Content-Security-Policy** response headers policy to the static default behavior and API path behaviors.
+Production enforces CSP; non-production stages emit `Content-Security-Policy-Report-Only` so violations can be observed without breaking the UI.
+
+**CORS** for browser-facing APIs is configured in Quarkus (`actor-bff`, and local `web-actor`). Origins are an explicit allowlist (`BACKBONE_PUBLIC_ALB_URL`, with a localhost fallback for local split-origin dev). Allowed request headers are enumerated (`accept`, `authorization`, `content-type` on the BFF); wildcards are not used. Deployed UI and API share the CloudFront apex hostname (same-origin), so CORS is mainly a guard for local development and misconfiguration. Auth uses Bearer JWT in `Authorization`, not cookies, so CORS credentials are not required.
+
 WAF at the edge is the first layer in the [origin protection model](#cloudfront-origin-protection-defense-in-depth); ALB listener and security-group controls apply on the regional origin path.
 
 See [ADR-0022](/docs/0022-public-alb-edge-and-origin-protection) for origin-hardening rationale and [ADR-0025](/docs/0025-static-ui-cloudfront-s3) for static UI delivery.
@@ -128,6 +133,23 @@ Backbone separates human and workload identity:
 - receiving services can enforce caller allowlists through `@AllowedServices`
 
 The platform does not rely on a trusted internal network assumption for service authorization. Services validate token identity and claims on each protected request.
+
+### CSRF posture
+
+Cross-site request forgery (CSRF) is the browser attack where a hostile site causes the victim's browser to call your API using credentials the browser attaches automatically (typically session cookies).
+
+Backbone's baseline API auth uses **stateless JWTs** sent as `Authorization: Bearer` from JavaScript (`localStorage`), not HttpOnly session cookies ([ADR-0011](/docs/0011-stateless-jwt-authentication)).
+Classic cookie-based CSRF therefore does **not** apply to ordinary BFF and service API calls: a cross-origin page cannot read the token from `localStorage`, and the browser will not attach a Bearer header on its own.
+
+Residual risks and controls:
+
+| Concern                               | Baseline control                                                                                  |
+|---------------------------------------|---------------------------------------------------------------------------------------------------|
+| XSS steals tokens from `localStorage` | CloudFront **Content-Security-Policy** (and related edge headers); see edge controls above        |
+| Hostile origins calling the API       | Explicit Quarkus **CORS** allowlists; same-origin UI+API via CloudFront in deployed envs          |
+| OAuth redirect forgery (LinkedIn)     | OAuth2 **`state`** parameter generated and validated on LinkedIn login/link flows in auth-service |
+
+**Explicit non-goals** for the baseline: double-submit CSRF tokens, SameSite cookie session auth, or moving access tokens into HttpOnly cookies. Those patterns belong in a future ADR if the token storage model changes.
 
 ### Least-privilege IAM implementation
 
@@ -177,9 +199,11 @@ Client hardening option: customer-managed KMS keys may be introduced through cli
 Encryption in transit posture in the baseline:
 
 - public browser traffic terminates TLS at CloudFront (minimum TLS 1.2)
+- CloudFront viewer policy redirects HTTP to HTTPS (`REDIRECT_TO_HTTPS`)
+- CloudFront emits **Strict-Transport-Security** plus `X-Content-Type-Options` and `Referrer-Policy` on static and API behaviors
 - CloudFront forwards API traffic to the internet-facing ALB over HTTPS
 - the internet-facing ALB forwards to ECS tasks over HTTP within the VPC (ALB TLS termination does not extend to target groups)
-- internal service-to-service traffic through the internal ALB uses HTTP and can be hardened to HTTPS in a later stage
+- internal service-to-service traffic through the internal ALB uses HTTP by default (`internalHttps: false`) and can be switched to HTTPS on the ALB listener via `platform-config.yml` (see [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional))
 
 ## Runtime workload isolation and container privilege posture
 
@@ -294,12 +318,16 @@ Status meaning:
 | Least-privilege IAM (`no Action: "*"`)                              | Implemented | Repository-authored baseline enforced; wildcard exceptions are bounded and documented.                                                           |
 | OIDC-based CI and CD deployment identity                            | Implemented | GitHub Actions role assumption uses constrained OIDC trust, not long-lived AWS keys.                                                             |
 | Public edge protection (CloudFront WAF and TLS)                     | Implemented | Edge WAF host filtering, rate limiting, and geo controls on the CloudFront distribution.                                                         |
+| Content-Security-Policy at CloudFront edge                          | Implemented | Response headers policy on static and API behaviors; Report-Only outside prod, enforcing in prod. Interim `unsafe-inline` for current UI.        |
+| TLS-only viewers + HSTS at CloudFront edge                          | Implemented | `REDIRECT_TO_HTTPS`, TLS 1.2+; HSTS one-year with `includeSubDomains` (no preload); XCTO and Referrer-Policy.                                    |
+| Browser CORS allowlist (Quarkus)                                    | Implemented | Explicit origins and request headers on actor-bff (and local web-actor); no `*` wildcards. Same-origin via CloudFront in deployed envs.          |
+| CSRF posture (Bearer JWT; OAuth `state`)                            | Implemented | No auth cookies for API calls; LinkedIn OAuth uses `state`. XSS mitigated via CSP, not classic CSRF tokens.                                      |
 | CloudFront origin verification and ALB ingress restriction          | Implemented | Defense in depth: WAF at edge; IPv4 CloudFront prefix list on internet-facing ALB SG; origin verification at ALB listener (primary origin gate). |
 | Static UI delivery of S3 with OAC                                   | Implemented | Private encrypted bucket; no public object access; CloudFront default origin.                                                                    |
 | Internal service authentication and authorization                   | Implemented | Application-layer JWT validation and service authorization controls are active.                                                                  |
 | Runtime isolation and container non-root baseline                   | Implemented | Fargate private-subnet deployment with non-root container runtime baseline.                                                                      |
 | Edge access logging (CloudFront and S3)                             | Implemented | CloudFront access logs and S3 server access logs for static edge and datastore buckets.                                                          |
-| Internal traffic encryption (HTTPS and mTLS for service-to-service) | Extensible  | Transport hardening available through client-owned code and infrastructure extension.                                                            |
+| Internal traffic encryption (HTTPS and mTLS for service-to-service) | Implemented | Opt-in via `internalHttps` in `platform-config.yml`: HTTPS listener + ACM + private DNS. ALB→task stays HTTP; mTLS/mesh remain extensible.        |
 | Customer-managed KMS key strategy                                   | Extensible  | Supported through client-owned key management and infrastructure extension.                                                                      |
 | ALB access logging baseline                                         | Implemented | When `governanceEvidenceEnabled` is true; omitted when operators use org-wide evidence stores.                                                   |
 | CloudTrail baseline (regional + global IAM/STS)                     | Implemented | When `governanceEvidenceEnabled` is true; disable when landing zone provides org trail. Set per env in `platform-config.yml`.                    |

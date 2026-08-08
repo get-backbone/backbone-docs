@@ -73,7 +73,8 @@ All authentication flows return JWT tokens that are:
 **Negative / Tradeoffs:**
 
 - **Client-Side Token Management**: Frontend must handle token storage, expiration, and refresh
-- **Token Security**: Tokens stored in localStorage are vulnerable to XSS attacks (mitigated by proper CSP headers)
+- **Token Security**: Tokens stored in localStorage are vulnerable to XSS attacks (mitigated by CloudFront CSP headers in the baseline)
+- **CSRF**: Bearer JWTs are not auto-attached by the browser, so classic cookie CSRF does not apply to API calls; OAuth redirect flows still require a validated `state` parameter (LinkedIn)
 - **No Server-Side Revocation**: JWT tokens cannot be revoked until expiration (acceptable tradeoff for stateless design)
 
 ---
