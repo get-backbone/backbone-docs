@@ -95,7 +95,7 @@ Other Linux distributions are not supported; `task bootstrap:toolchain` exits on
 
 ### 2. Maven settings
 
-To allow consumption of GitHub packages published by the public `get-backbone/forge-kit` repo, configure local `~/.m2/settings.xml` with GitHub credentials. The script prompts for your GitHub username and a classic (only) PAT token named `PAT_BACKBONE_DEPLOY` that you will need to create. The script will back up any existing `~/.m2/settings.xml` file first.
+To allow consumption of GitHub packages published by the public `get-backbone/backbone-kit` repo, configure local `~/.m2/settings.xml` with GitHub credentials. The script prompts for your GitHub username and a classic (only) PAT token named `PAT_BACKBONE_DEPLOY` that you will need to create. The script will back up any existing `~/.m2/settings.xml` file first.
 
 ```bash
 task bootstrap:mvn
