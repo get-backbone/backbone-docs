@@ -1,0 +1,1006 @@
+{
+  "openapi": "3.1.0",
+  "components": {
+    "schemas": {
+      "ActorResponse": {
+        "description": "Actor profile information",
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates if the operation was successful"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Unique actor identifier (UUID)"
+          },
+          "emailAddress": {
+            "type": "string",
+            "description": "Email address",
+            "examples": [
+              "john.doe@example.com"
+            ]
+          },
+          "username": {
+            "type": "string",
+            "description": "Username (first name only for security)"
+          },
+          "linkedInSub": {
+            "type": "string",
+            "description": "LinkedIn OAuth sub (unique identifier) for OAuth login"
+          },
+          "profilePhotoUrl": {
+            "type": "string",
+            "description": "URL to profile photo",
+            "examples": [
+              "https://example.com/photos/john.jpg"
+            ]
+          },
+          "timestamp": {
+            "description": "Account creation timestamp",
+            "type": "string",
+            "examples": [
+              "2025-01-27T12:00:00Z"
+            ],
+            "$ref": "#/components/schemas/Instant"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Error message if operation failed",
+            "examples": [
+              "Actor not found"
+            ]
+          }
+        }
+      },
+      "AuditEventRequest": {
+        "description": "Audit event payload for ingest",
+        "type": "object",
+        "required": [
+          "eventId",
+          "className",
+          "methodName",
+          "eventType",
+          "severity",
+          "message",
+          "timestamp"
+        ],
+        "properties": {
+          "eventId": {
+            "description": "Unique event identifier",
+            "type": "string",
+            "$ref": "#/components/schemas/UUID"
+          },
+          "className": {
+            "type": "string",
+            "description": "Class name of the audited method"
+          },
+          "methodName": {
+            "type": "string",
+            "description": "Method name"
+          },
+          "eventType": {
+            "type": "string",
+            "description": "Event type (e.g. AUTH, DATA_ACCESS)"
+          },
+          "severity": {
+            "type": "string",
+            "description": "Severity (e.g. INFO, WARN, SECURITY)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Formatted message"
+          },
+          "timestamp": {
+            "description": "Event timestamp",
+            "type": "string",
+            "$ref": "#/components/schemas/Instant"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Actor identifier (authenticated actor; null only for unauthenticated flows until resolved)"
+          },
+          "correlationId": {
+            "type": "string",
+            "description": "Correlation ID for tracing (e.g. trace id)"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Optional metadata"
+          }
+        }
+      },
+      "AuthIdentity": {
+        "type": "object",
+        "description": "Authenticated identity information from Cognito",
+        "properties": {
+          "sub": {
+            "type": "string",
+            "description": "Identity unique identifier (UUID from Cognito)",
+            "examples": [
+              "123e4567-e89b-12d3-a456-426614174000"
+            ]
+          },
+          "username": {
+            "type": "string",
+            "description": "Username",
+            "examples": [
+              "johndoe",
+              "document-service"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address",
+            "examples": [
+              "john.doe@example.com"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Identity roles"
+          },
+          "tokenExpiration": {
+            "description": "Token expiration timestamp",
+            "type": "string",
+            "$ref": "#/components/schemas/Instant"
+          },
+          "tokenExpired": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "description": "Authentication response containing tokens and user information",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates if authentication was successful",
+            "examples": [
+              true
+            ]
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "JWT access token for API authentication"
+          },
+          "idToken": {
+            "type": "string",
+            "description": "JWT ID token containing user identity claims"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token for obtaining new access tokens"
+          },
+          "expiresAt": {
+            "description": "Token expiration timestamp",
+            "type": "string",
+            "$ref": "#/components/schemas/Instant"
+          },
+          "user": {
+            "description": "Authenticated user information",
+            "type": "object",
+            "$ref": "#/components/schemas/AuthIdentity"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Error message if authentication failed",
+            "examples": [
+              "Invalid credentials"
+            ]
+          }
+        }
+      },
+      "DocumentResponse": {
+        "description": "Response containing parsed document information",
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates if the operation was successful",
+            "examples": [
+              true
+            ]
+          },
+          "transactionId": {
+            "type": "string",
+            "description": "Transaction ID for the document parsing operation",
+            "examples": [
+              "txn-123456"
+            ]
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Unique actor identifier (UUID)",
+            "examples": [
+              "123e4567-e89b-12d3-a456-426614174000"
+            ]
+          },
+          "documentUploadKey": {
+            "type": "string",
+            "description": "S3 key for the uploaded document file",
+            "examples": [
+              "documents/123e4567-e89b-12d3-a456-426614174000/document.pdf"
+            ]
+          },
+          "documentType": {
+            "type": "string",
+            "description": "MIME type of the document",
+            "examples": [
+              "application/pdf"
+            ]
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Original filename of the uploaded document",
+            "examples": [
+              "resume.pdf"
+            ]
+          },
+          "documentSize": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Size of the document in bytes",
+            "examples": [
+              123456
+            ]
+          },
+          "parseTimestamp": {
+            "description": "Timestamp when the document was parsed",
+            "type": "string",
+            "examples": [
+              "2025-01-27T12:00:00Z"
+            ],
+            "$ref": "#/components/schemas/Instant"
+          },
+          "metadata": {
+            "type": "string",
+            "description": "JSON string of Tika metadata (separate from text for search optimization)",
+            "examples": [
+              "{\"Content-Type\":\"application/pdf\",\"title\":\"Resume\"}"
+            ]
+          },
+          "extractedText": {
+            "type": "string",
+            "description": "Plain text extracted by Tika (separate from metadata for search optimization)",
+            "examples": [
+              "John Doe\nSoftware Engineer..."
+            ]
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Error message if operation failed",
+            "examples": [
+              "Failed to parse document"
+            ]
+          }
+        }
+      },
+      "ErrorResponse": {
+        "description": "Standard error response",
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message describing what went wrong",
+            "examples": [
+              "Resource not found"
+            ]
+          }
+        }
+      },
+      "Instant": {
+        "type": "string",
+        "format": "date-time",
+        "examples": [
+          "2022-03-10T16:15:50Z"
+        ]
+      },
+      "LoginRequest": {
+        "description": "Request for user authentication",
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username or email address",
+            "examples": [
+              "user@example.com"
+            ],
+            "pattern": "\\S"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "examples": [
+              "SecurePassword123!"
+            ],
+            "pattern": "\\S"
+          }
+        }
+      },
+      "RecipientDto": {
+        "type": "object",
+        "description": "Recipient information",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Recipient email address",
+            "examples": [
+              "user@example.com"
+            ]
+          },
+          "phone": {
+            "type": "string",
+            "description": "Recipient phone number",
+            "examples": [
+              "+1234567890"
+            ]
+          }
+        }
+      },
+      "RecipientDto1": {
+        "type": "object",
+        "description": "Recipient information",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Recipient email address",
+            "examples": [
+              "user@example.com"
+            ]
+          },
+          "phone": {
+            "type": "string",
+            "description": "Recipient phone number",
+            "examples": [
+              "+1234567890"
+            ]
+          }
+        }
+      },
+      "RefreshRequest": {
+        "description": "Request for refreshing authentication tokens",
+        "type": "object",
+        "required": [
+          "refreshToken"
+        ],
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token obtained from previous authentication",
+            "examples": [
+              "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+            ],
+            "pattern": "\\S"
+          },
+          "username": {
+            "type": "string",
+            "description": "Username associated with the refresh token",
+            "examples": [
+              "user@example.com"
+            ],
+            "maxLength": 255
+          },
+          "idToken": {
+            "type": "string",
+            "description": "ID token from previous authentication (used to extract username for SECRET_HASH calculation)",
+            "examples": [
+              "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+            ],
+            "maxLength": 2048
+          }
+        }
+      },
+      "RegisterRequest": {
+        "description": "Request for user registration",
+        "type": "object",
+        "required": [
+          "name",
+          "emailAddress",
+          "password"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Full name of the user",
+            "examples": [
+              "John Doe"
+            ],
+            "pattern": "\\S",
+            "maxLength": 255
+          },
+          "emailAddress": {
+            "type": "string",
+            "description": "Email address",
+            "examples": [
+              "john.doe@example.com"
+            ],
+            "pattern": "\\S",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "description": "User password (8-128 characters; at least one uppercase, one lowercase, one number; symbols optional)",
+            "examples": [
+              "SecurePassword123"
+            ],
+            "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,128}$",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        }
+      },
+      "RegisterRequestWithAuthIdentity": {
+        "description": "Registration request with authenticated user identity from Cognito",
+        "type": "object",
+        "required": [
+          "authIdentity",
+          "registerRequest"
+        ],
+        "properties": {
+          "authIdentity": {
+            "description": "Authenticated user information from Cognito",
+            "type": "object",
+            "$ref": "#/components/schemas/AuthIdentity"
+          },
+          "registerRequest": {
+            "description": "User registration details",
+            "type": "object",
+            "$ref": "#/components/schemas/RegisterRequest"
+          }
+        }
+      },
+      "RegistrationResponse": {
+        "description": "Response for user registration containing authentication result",
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates if registration was successful",
+            "examples": [
+              true
+            ]
+          },
+          "authenticationResult": {
+            "description": "Authentication result with tokens if registration succeeded",
+            "type": "object",
+            "$ref": "#/components/schemas/AuthResponse"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Error message if registration failed",
+            "examples": [
+              "Email already exists"
+            ]
+          }
+        }
+      },
+      "SendNotificationResponse": {
+        "description": "Response after queuing a notification",
+        "type": "object",
+        "required": [
+          "notificationId",
+          "status",
+          "channel"
+        ],
+        "properties": {
+          "notificationId": {
+            "description": "Unique identifier for the queued notification",
+            "type": "string",
+            "$ref": "#/components/schemas/UUID"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the notification",
+            "examples": [
+              "QUEUED"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "description": "Channel used for the notification",
+            "examples": [
+              "EMAIL"
+            ]
+          }
+        }
+      },
+      "SendPasswordResetEmailRequest": {
+        "description": "Request to send a password reset email to an actor",
+        "type": "object",
+        "properties": {
+          "variables": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Optional template variables to customize the email content"
+          }
+        }
+      },
+      "SendWelcomeEmailRequest": {
+        "description": "Request to send a welcome email to an actor",
+        "type": "object",
+        "properties": {
+          "variables": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Optional template variables to customize the email content"
+          }
+        }
+      },
+      "SubscriptionStatusResponse": {
+        "description": "Subscription status for a recipient",
+        "type": "object",
+        "required": [
+          "email",
+          "subscribed",
+          "channels"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Recipient email address"
+          },
+          "subscribed": {
+            "type": "boolean",
+            "description": "Whether the recipient is subscribed (true if subscribed to at least one channel)"
+          },
+          "channels": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "Subscription status per channel"
+          }
+        }
+      },
+      "UUID": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+      },
+      "UnsubscribeRequest": {
+        "description": "Request to unsubscribe a recipient from notifications",
+        "type": "object",
+        "required": [
+          "recipient"
+        ],
+        "properties": {
+          "recipient": {
+            "description": "Recipient information",
+            "type": "object",
+            "$ref": "#/components/schemas/RecipientDto"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Channel to unsubscribe from (EMAIL, SMS, PUSH). If null, unsubscribes from all channels",
+            "examples": [
+              "EMAIL"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for unsubscribing",
+            "examples": [
+              "USER_REQUEST"
+            ]
+          }
+        }
+      },
+      "UnsubscribeResponse": {
+        "description": "Response after unsubscribing from notifications",
+        "type": "object",
+        "required": [
+          "success",
+          "recipient",
+          "unsubscribedChannels"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the unsubscribe operation was successful"
+          },
+          "recipient": {
+            "description": "Recipient information",
+            "type": "object",
+            "$ref": "#/components/schemas/RecipientDto1"
+          },
+          "unsubscribedChannels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of channels that were unsubscribed"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "SecurityScheme": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Authentication"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Actors"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Documents"
+    },
+    {
+      "name": "Notifications"
+    }
+  ],
+  "paths": {
+    "/actors/{actorId}": {
+      "get": {
+        "summary": "Get an actor profile",
+        "operationId": "getActor",
+        "tags": [
+          "Actors"
+        ],
+        "parameters": [
+          {
+            "name": "actorId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/linkedin/link": {
+      "get": {
+        "summary": "Start LinkedIn account linking",
+        "operationId": "linkAccount",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/linkedin/link/complete": {
+      "post": {
+        "summary": "Complete LinkedIn account linking",
+        "operationId": "completeLinking",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/auth/linkedin/login": {
+      "get": {
+        "summary": "Start LinkedIn login (redirect)",
+        "operationId": "linkedInLogin",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [
+          {
+            "name": "redirect",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Log in with email and password",
+        "operationId": "login",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/auth/refresh-user-token": {
+      "post": {
+        "summary": "Refresh a user access token",
+        "operationId": "refreshUserToken",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new actor account",
+        "operationId": "register",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/auth/tokens/exchange": {
+      "post": {
+        "summary": "Exchange tokens for a browser session",
+        "operationId": "exchangeToken",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/documents": {
+      "post": {
+        "summary": "Upload and parse documents for an actor",
+        "operationId": "upload",
+        "tags": [
+          "Documents"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "actorId": {
+                    "type": "string"
+                  },
+                  "documents": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      },
+      "get": {
+        "summary": "List documents for an actor",
+        "operationId": "getDocuments",
+        "tags": [
+          "Documents"
+        ],
+        "parameters": [
+          {
+            "name": "actorId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/subscription-status": {
+      "get": {
+        "summary": "Get notification subscription status for an actor",
+        "operationId": "getSubscriptionStatus",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "actorId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "info": {
+    "title": "Actor BFF API",
+    "version": "0.0.0",
+    "description": "Browser-facing Backbone API for authentication, actors, documents, and notification preferences."
+  }
+}
