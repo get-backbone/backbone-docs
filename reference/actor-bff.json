@@ -845,15 +845,15 @@
       }
     }
   },
-  "info" : {
-    "title" : "Actor BFF API",
-    "version" : "0.0.0",
-    "description" : "Browser-facing Backbone API for authentication, actors, documents, and notification preferences."
-  },
   "servers" : [ {
     "url" : "https://int.backbonehq.io"
   } ],
   "x-readme" : {
     "explorer-enabled" : false
+  },
+  "info" : {
+    "title" : "Actor BFF API",
+    "version" : "1.0.1",
+    "description" : "Browser-facing Backbone API for authentication, actors, documents, and notification preferences."
   }
 }
