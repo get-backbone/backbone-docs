@@ -13,7 +13,7 @@ This guide is for architecture review, procurement, and technical due diligence.
 
 The infrastructure model prioritizes:
 
-- **Predictable deployments** — repeatable stacks per environment (DEV, INT, TEST, PROD)
+- **Predictable deployments** — repeatable stacks per environment (DEV, INT, STAGE, PROD)
 - **Horizontal scale** — stateless ECS services behind load balancers
 - **Private-by-default** — datastores and tasks in private subnets; controlled public edge
 - **Least privilege** — scoped IAM, security groups, and secret access
@@ -106,7 +106,7 @@ Backbone supports progressive hardening without redesigning application services
 | Topic                 | Expectation                                                                                              |
 |-----------------------|----------------------------------------------------------------------------------------------------------|
 | **Account ownership** | Operator provisions and pays for all AWS resources                                                       |
-| **Environments**      | DEV / INT / TEST / PROD are isolated deployments within operator control                                 |
+| **Environments**      | DEV / INT / STAGE / PROD are isolated deployments within operator control                                 |
 | **Configuration**     | Domain, capacity, VPC topology, and feature toggles are operator-maintained                              |
 | **Extensibility**     | New deployable services follow the platform service registry pattern in the private codebase             |
 | **Operations**        | CDK deploy/destroy, runtime switching, and self-hosted CI runners documented in [Runbook](/docs/runbook) |

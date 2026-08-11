@@ -9,7 +9,7 @@ This guide is the architectural map. It explains how Backbone thinks about opera
 
 ## Four concerns
 
-| Concern                       | Question                                                                                    | Backbone provides                                                          | Typical implementation (AWS)                     |
+| Concern                       | Question                                                                                    | Backbone provides                                                       | Typical implementation (AWS)                     |
 |-------------------------------|---------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|--------------------------------------------------|
 | **Application observability** | How is my software behaving?                                                                | Instrumentation, export, and dashboards across all services             | AMP, X-Ray, CloudWatch Logs, AMG                 |
 | **Infrastructure monitoring** | Is the infrastructure healthy?                                                              | Per-stack CloudWatch dashboards and alarms across the deployed platform | CloudWatch metrics → SNS                         |
@@ -44,11 +44,11 @@ Backbone's governance evidence capability uses CloudTrail, load-balancer access 
 
 ## Environment posture
 
-| Environment     | Application observability         | Infrastructure monitoring | Governance evidence          |
-|-----------------|-----------------------------------|---------------------------|------------------------------|
-| **Local**       | Local metrics and tracing tooling | n/a                       | n/a                          |
-| **INT**         | Lightweight logging only          | Alarms deploy             | Off by default               |
-| **TEST / PROD** | Full managed observability        | Alarms deploy             | On by default (configurable) |
+| Environment      | Application observability         | Infrastructure monitoring | Governance evidence          |
+|------------------|-----------------------------------|---------------------------|------------------------------|
+| **Local**        | Local metrics and tracing tooling | n/a                       | n/a                          |
+| **INT**          | Lightweight logging only          | Alarms deploy             | Off by default               |
+| **STAGE / PROD** | Full managed observability        | Alarms deploy             | On by default (configurable) |
 
 INT is optimized for integration testing rather than production-scale operational visibility. Deployment defaults and environment-specific behaviour are documented in [Operations](/docs/operations). See [ADR-0026](/docs/0026-observability-backend-strategy) for backend detail.
 
@@ -67,7 +67,7 @@ Backbone operates at the **application platform layer**, not as an AWS landing z
 | Extension                                         | Complements                                                        |
 |---------------------------------------------------|--------------------------------------------------------------------|
 | **AWS Config**                                    | CloudTrail (configuration history: *what* changed, not only *who*) |
-| **Org-wide CloudTrail → log archive**             | Replace or supplement Backbone governance evidence                    |
+| **Org-wide CloudTrail → log archive**             | Replace or supplement Backbone governance evidence                 |
 | **GuardDuty, Security Hub, Inspector, Detective** | Account-level threat detection                                     |
 | **SIEM / central security account**               | Cross-account correlation                                          |
 | **VPC Flow Logs**                                 | Network forensics (volume/cost sensitive)                          |

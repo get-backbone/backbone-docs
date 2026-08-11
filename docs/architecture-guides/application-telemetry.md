@@ -28,8 +28,8 @@ Backbone records metrics at the HTTP layer, on domain operations, on data access
         ├─ Circuit breakers (open / reject counts)
         └─ Rate limiting (requests, violations, utilization)
                 │
-                ├─ Metrics ──► AMP (TEST / PROD)  ──► AMG dashboards
-                ├─ Traces  ──► X-Ray (TEST / PROD) ──► AMG trace views
+                ├─ Metrics ──► AMP (STAGE / PROD)  ──► AMG dashboards
+                ├─ Traces  ──► X-Ray (STAGE / PROD) ──► AMG trace views
                 └─ Logs    ──► CloudWatch Logs
 
   Platform infrastructure (ALB, RDS, WAF, …)
@@ -37,7 +37,7 @@ Backbone records metrics at the HTTP layer, on domain operations, on data access
         └─ CloudWatch metrics + SNS alarms
 ```
 
-Each service is instrumented with Micrometer and OpenTelemetry. In deployed TEST and PROD environments, metrics and traces export in-process from the application task.
+Each service is instrumented with Micrometer and OpenTelemetry. In deployed STAGE and PROD environments, metrics and traces export in-process from the application task.
 
 ## What is measured
 
@@ -57,7 +57,7 @@ Metrics are consistent across services so dashboards can compare behaviour betwe
 |-----------------|---------------------------|---------------|------------------------|
 | **Local dev**   | Prometheus (Compose)      | Jaeger        | Grafana (Compose)      |
 | **INT**         | Exporters off             | Exporters off | Not deployed           |
-| **TEST / PROD** | Amazon Managed Prometheus | AWS X-Ray     | Amazon Managed Grafana |
+| **STAGE / PROD** | Amazon Managed Prometheus | AWS X-Ray     | Amazon Managed Grafana |
 
 INT deliberately does not deploy the managed observability stack or enable exporters — integration testing does not require production observability infrastructure.
 
@@ -74,7 +74,7 @@ INT deliberately does not deploy the managed observability stack or enable expor
 | Notification Delivery    | Delivery by channel, provider, reason, failure ratio                 |
 | Audit Delivery           | Ingest/dispatch lifecycle by event type, severity, reason            |
 | Platform Ops             | ALB / ECS / RDS CloudWatch SEARCH + thin X-Ray Trace Statistics (AMG) |
-| Process Runtime          | Process/CPU/uptime for native ECS (primary in TEST/PROD)             |
+| Process Runtime          | Process/CPU/uptime for native ECS (primary in STAGE/PROD)             |
 | Quarkus JVM              | Heap/GC for local `quarkus:dev` and `BACKBONE_ECS_RUNTIME_MODE=jvm`  |
 
 Infrastructure alarms (load balancers, databases, WAF, and similar) use **CloudWatch and SNS**, independent of AMP. See [Infrastructure monitoring](/docs/monitoring).

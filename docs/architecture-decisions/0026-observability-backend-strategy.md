@@ -11,7 +11,7 @@ summary: "Backbone adopts OpenTelemetry instrumentation with environment-specifi
 
 Backbone runs GraalVM-native Quarkus services on AWS ECS Fargate at deliberately small task sizes. Operators need production-grade visibility into application behaviour, cross-service request flows, and platform health — not only container liveness.
 
-The platform already instruments services with Micrometer and OpenTelemetry for local development. [ADR-0007](/docs/0007-observability-strategy) did not define an observability backend strategy for metrics, traces, dashboards, and infrastructure monitoring. A decision is required before deploying TEST and PROD.
+The platform already instruments services with Micrometer and OpenTelemetry for local development. [ADR-0007](/docs/0007-observability-strategy) did not define an observability backend strategy for metrics, traces, dashboards, and infrastructure monitoring. A decision is required before deploying STAGE and PROD.
 
 Application audit logging (business events) remains a separate concern from operational telemetry. Governance evidence (CloudTrail, load-balancer access logs, protected evidence buckets) is defined in [ADR-0027](/docs/0027-governance-evidence-architecture).
 
@@ -19,7 +19,7 @@ Application audit logging (business events) remains a separate concern from oper
 
 Backbone will use **OpenTelemetry as the instrumentation standard** across all environments. **Backend targets vary by environment and by signal type** — metrics and traces follow separate AWS-recommended pipelines.
 
-### Signal backends (deployed TEST and PROD)
+### Signal backends (deployed STAGE and PROD)
 
 | Signal                | Backend                                                                        |
 |-----------------------|--------------------------------------------------------------------------------|
@@ -35,7 +35,7 @@ Backbone will use **OpenTelemetry as the instrumentation standard** across all e
 |-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Local development** | Prometheus, Jaeger, and Grafana (existing Compose stack)                                                                                                        |
 | **INT**               | Instrumentation present; **exporters disabled** and **no AMP/AMG stack deployed** — INT is for integration testing, not observability cost or operational noise |
-| **TEST / PROD**       | In-process export to the backends above                                                                                                                         |
+| **STAGE / PROD**       | In-process export to the backends above                                                                                                                         |
 
 ### Architectural constraints
 
@@ -57,8 +57,8 @@ Configuration — endpoints, credentials, and profile switches — is environmen
 
 ### Negative
 
-- TEST and PROD operators depend on AMP, AMG, and X-Ray availability and pricing.
-- INT cannot validate end-to-end observability pipelines; that validation belongs in TEST.
+- STAGE and PROD operators depend on AMP, AMG, and X-Ray availability and pricing.
+- INT cannot validate end-to-end observability pipelines; that validation belongs in STAGE.
 - In-process export ties telemetry behaviour to application release and resource limits; there is no collector buffer for back-pressure or advanced tail sampling without a future architectural change.
 
 If Backbone later requires capabilities such as centralized tail sampling, multi-destination export, or telemetry transformation, this decision should be revisited and an OpenTelemetry Collector re-evaluated.

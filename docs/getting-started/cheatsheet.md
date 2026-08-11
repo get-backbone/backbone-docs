@@ -38,7 +38,7 @@ Commentary, prerequisites, and follow-on setup are in [OPERATIONS.md — GitHub 
 
 ```bash
 BACKBONE_STAGE_ENV=INT task cdk:synth
-BACKBONE_STAGE_ENV=INT task aws:deploy-github-role    # deploy GitHub OIDC role
+BACKBONE_STAGE_ENV=INT task aws:deploy-github-role # deploy GitHub OIDC role (repeat for STAGE/PROD)
 ```
 
 ## Local development

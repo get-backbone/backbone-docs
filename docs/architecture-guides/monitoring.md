@@ -44,7 +44,7 @@ Backbone deliberately separates **infrastructure monitoring** from **application
 | **Primary backend**    | CloudWatch metrics                     | AMP, X-Ray, CloudWatch Logs, AMG   |
 | **Typical signals**    | CPU, memory, 5xx, target health, WAF   | Request latency, domain counters   |
 | **Alert delivery**     | SNS                                    | Operator-defined (often AMG + SNS) |
-| **Deploys with stage** | Yes — including INT                    | TEST / PROD when observability on  |
+| **Deploys with stage** | Yes — including INT                    | STAGE / PROD when observability on  |
 
 Each monitored stack receives its own dashboard so operators can narrow investigations to the layer that changed — runtime, datastore, edge, identity, or domain — without a single monolithic “everything” board.
 

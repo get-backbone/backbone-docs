@@ -148,7 +148,7 @@ And baseline values for:
 - **NAT Gateway enabled**: Set to false everywhere for cost optimization (backbone uses VPC endpoints internally); you only need this enabled if your platform architecture dictates outbound internet access.
 - **ECS desired task count**: Set to 1 for cost optimization.
 
-You can override these values on a per-environment basis. By convention, backbone treats DEV/INT as non-production environments and TEST/PROD as production-like environments.
+You can override these values on a per-environment basis. By convention, backbone treats DEV/INT as non-production environments and STAGE/PROD as production-like environments.
 
 ### 6. Development environment variables (.envrc.local)
 

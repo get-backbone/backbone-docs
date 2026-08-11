@@ -31,26 +31,31 @@ Backbone pipelines run on free tier GitHub plans. Most workflows complete in a f
 
 ### 1. Setup AWS IAM resources for GitHub Actions OIDC
 
-First-time (only) INT deployment of stack `Backbone-INT/GitHubRoleStack` must occur outside GitHub. Workflows call `aws-actions/configure-aws-credentials` a role that is only created when CDK deploys `Backbone-INT/GitHubRoleStack`. There is no CDK pattern that avoids this: **something** must authenticate to AWS before the role exists. Once per account/region, from a machine already logged into the **INT** AWS account (SSO, IAM user, or similar), deploy only the role stack:
+Each environment account (INT, STAGE, PROD) needs `GitHubRoleStack` once before GitHub Actions can assume `backbone-github-actions-ci` via OIDC. There is no CDK pattern that avoids this: **something** must authenticate to AWS before the role exists. From a machine already logged into that account (SSO, IAM user, or similar):
 
 ```bash
 BACKBONE_STAGE_ENV=INT task cdk:synth
 BACKBONE_STAGE_ENV=INT task aws:deploy-github-role
+# Repeat with BACKBONE_STAGE_ENV=STAGE and PROD against those AWS accounts when required
 ```
 
-OIDC trust is scoped to `github.organization` in `platform-config.yml` (set via `task bootstrap:platform-config`). The role allows Actions from `backbone-*` repos in that org (classic and immutable `sub` forms). After changing the organization, re-run the deploy above.
+OIDC trust is scoped to `github.organization` in `platform-config.yml` (set via `task bootstrap:platform-config`). The role allows Actions from `backbone-*` repos in that org (classic and immutable `sub` forms). After changing the organization, re-run the deploy above for each account.
 
-After that, GitHub Actions can assume the role and GitHub Actions workflows will succeed. Only the **INT** stage defines `GitHubRoleStack`; other stages do not create this role.
+The INT role includes ECR push to the central registry. STAGE/PROD roles can force-deploy ECS and run CDK in their accounts, but do not push images. Paid GitHub plans can later add Environment required reviewers on `PROD` without changing this bootstrap.
 
 ### 2. Setup GitHub Actions Variables and Secrets
 
-**Required GitHub Actions Variables** (Settings > Secrets and variables > Actions > Variables > Repository variables):
+**Required repository variables** (Settings > Secrets and variables > Actions > Variables):
 
-- `AWS_REGION` - AWS region for deployment
-- `AWS_ACCOUNT_ID` - AWS account ID for deployment
+- `AWS_REGION` - shared region for INT / STAGE / PROD (same region for all promotion stages)
 - `BACKBONE_ECS_RUNTIME_MODE` (optional) - `jvm` (faster image build; slower container startup) or `native` (long builds; smaller images; better cold start).
 - `USER_BACKBONE_DEPLOY` - GitHub username for the account that owns `secrets.PAT_BACKBONE_DEPLOY` (workflows pass it as `GITHUB_MAVEN_USERNAME` to `configure-maven-github.sh`)
 
+**Required environment variables** (Settings > Environments > `INT` / `STAGE` / `PROD`):
+
+- `AWS_ACCOUNT_ID` - AWS account ID for that environment
+
+Create Environments named exactly `INT`, `STAGE`, and `PROD`. Workflows that deploy or push images declare `environment:` so `vars.AWS_ACCOUNT_ID` resolves per target.
 **Required GitHub Actions Secrets** (Settings > Secrets and variables > Actions > Secrets > Repository secrets):
 
 Backbone-related secrets:
@@ -251,7 +256,7 @@ The client mirror does not include `infra/cdk.context.json`; run `task cdk:synth
 
 ### AWS environment
 
-GitHub Actions needs GitHubRoleStack to exist first; bootstrap it manually once (see [GitHub Setup](#1-setup-aws-iam-resources-for-github-actions-oidc)).
+GitHub Actions needs GitHubRoleStack in the target account first; bootstrap it manually once per INT / STAGE / PROD account (see [GitHub Setup](#1-setup-aws-iam-resources-for-github-actions-oidc)).
 
 DEV is the usual stage for local CDK defaults; CI/CD runs with `BACKBONE_STAGE_ENV=INT` (see [01-infra-bootstrap.yml](https://github.com/get-backbone/backbone-platform/blob/main/.github/workflows/01-infra-bootstrap.yml)).
 
