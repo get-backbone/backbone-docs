@@ -41,21 +41,21 @@ BACKBONE_STAGE_ENV=INT task aws:deploy-github-role
 
 OIDC trust is scoped to `github.organization` in `platform-config.yml` (set via `task bootstrap:platform-config`). The role allows Actions from `backbone-*` repos in that org (classic and immutable `sub` forms). After changing the organization, re-run the deploy above for each account.
 
-The INT role includes ECR push to the central registry. STAGE/PROD roles can force-deploy ECS and run CDK in their accounts, but do not push images. Paid GitHub plans can later add Environment required reviewers on `PROD` without changing this bootstrap.
+The INT role includes ECR push to the central registry. STAGE/PROD roles can force-deploy ECS and run CDK in their accounts, but do not push images. Paid GitHub plans can later add deployment protection (e.g. Environment required reviewers on PROD) without changing this bootstrap.
 
 ### 2. Setup GitHub Actions Variables and Secrets
 
 **Required repository variables** (Settings > Secrets and variables > Actions > Variables):
 
-- `AWS_REGION` - shared region for INT / STAGE / PROD (same region for all promotion stages)
+- `AWS_REGION` - region for INT / STAGE / PROD (same region for all promotion stages)
+- `INT_AWS_ACCOUNT_ID` - AWS account ID for the INT stage (central ECR registry; image push and INT deploys)
+- `STAGE_AWS_ACCOUNT_ID` - AWS account ID for the STAGE stage
+- `PROD_AWS_ACCOUNT_ID` - AWS account ID for the PROD stage
 - `BACKBONE_ECS_RUNTIME_MODE` (optional) - `jvm` (faster image build; slower container startup) or `native` (long builds; smaller images; better cold start).
 - `USER_BACKBONE_DEPLOY` - GitHub username for the account that owns `secrets.PAT_BACKBONE_DEPLOY` (workflows pass it as `GITHUB_MAVEN_USERNAME` to `configure-maven-github.sh`)
 
-**Required environment variables** (Settings > Environments > `INT` / `STAGE` / `PROD`):
+Workflows select the target account from those vars (e.g. INT for ECR push; INT/STAGE/PROD from a `stage_env` choice). CDK reads the same names from the job environment for central ECR ARNs and the pull allow-list.
 
-- `AWS_ACCOUNT_ID` - AWS account ID for that environment
-
-Create Environments named exactly `INT`, `STAGE`, and `PROD`. Workflows that deploy or push images declare `environment:` so `vars.AWS_ACCOUNT_ID` resolves per target.
 **Required GitHub Actions Secrets** (Settings > Secrets and variables > Actions > Secrets > Repository secrets):
 
 Backbone-related secrets:
