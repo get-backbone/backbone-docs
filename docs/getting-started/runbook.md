@@ -11,6 +11,7 @@ summary: "Operational procedures for Backbone infrastructure and delivery."
 - [4) Add a bash script](#4-add-a-bash-script)
 - [5) Scaffold a new domain service](#5-scaffold-a-new-domain-service)
 - [6) Query private Postgres (CloudShell VPC)](#6-query-private-postgres-cloudshell-vpc)
+- [7) Password reset against Floci (local)](#7-password-reset-against-floci-local)
 
 ---
 
@@ -117,3 +118,15 @@ psql "host=$PGHOST port=5432 dbname=backbone user=backbone sslmode=require"
 ```sql
 SELECT * FROM audit.audit_events WHERE method_name = 'login' ORDER BY event_timestamp DESC LIMIT 10;
 ```
+
+---
+
+## 7) Password reset against Floci (local)
+
+Floci accepts SES sends but does not deliver mail. After **Forgot password** in web-actor, pull the reset link from the local SES mailbox and open it to continue:
+
+```bash
+curl -s http://localhost:4566/_aws/ses
+```
+
+Use the `reset-password.html?token=…` URL from the message body (text or HTML). Clear captured mail with `curl -X DELETE http://localhost:4566/_aws/ses` if the list gets noisy.

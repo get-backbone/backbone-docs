@@ -244,6 +244,32 @@
           }
         }
       },
+      "ForgotPasswordRequest" : {
+        "description" : "Request to start the forgotten-password process",
+        "type" : "object",
+        "required" : [ "emailAddress" ],
+        "properties" : {
+          "emailAddress" : {
+            "type" : "string",
+            "description" : "Email address of the account to reset",
+            "pattern" : "\\S"
+          }
+        }
+      },
+      "ForgotPasswordResponse" : {
+        "description" : "Response for starting a forgotten-password flow",
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean",
+            "description" : "Always true; does not indicate whether an email was sent"
+          },
+          "errorMessage" : {
+            "type" : "string",
+            "description" : "Unused; present for metrics contract"
+          }
+        }
+      },
       "Instant" : {
         "type" : "string",
         "format" : "date-time",
@@ -389,6 +415,38 @@
             "type" : "string",
             "description" : "Error message if registration failed",
             "examples" : [ "Email already exists" ]
+          }
+        }
+      },
+      "ResetPasswordRequest" : {
+        "description" : "Request to reset a password using a one-time token",
+        "type" : "object",
+        "required" : [ "token", "newPassword" ],
+        "properties" : {
+          "token" : {
+            "type" : "string",
+            "description" : "One-time password reset token from the email link",
+            "pattern" : "\\S"
+          },
+          "newPassword" : {
+            "type" : "string",
+            "description" : "New password meeting Cognito policy",
+            "pattern" : "\\S",
+            "minLength" : 8
+          }
+        }
+      },
+      "ResetPasswordResponse" : {
+        "description" : "Response for password reset confirmation",
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean",
+            "description" : "Indicates if the password was reset"
+          },
+          "errorMessage" : {
+            "type" : "string",
+            "description" : "Error message if reset failed"
           }
         }
       },
@@ -549,6 +607,36 @@
                 "schema" : { }
               }
             }
+          }
+        }
+      }
+    },
+    "/auth/forgot-password" : {
+      "post" : {
+        "summary" : "Request a password reset email",
+        "operationId" : "forgotPassword",
+        "tags" : [ "Auth" ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
           }
         }
       }
@@ -717,6 +805,36 @@
         }
       }
     },
+    "/auth/reset-password" : {
+      "post" : {
+        "summary" : "Reset password with a one-time token",
+        "operationId" : "resetPassword",
+        "tags" : [ "Auth" ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        }
+      }
+    },
     "/auth/tokens/exchange" : {
       "post" : {
         "summary" : "Exchange tokens for a browser session",
@@ -853,7 +971,7 @@
   },
   "info" : {
     "title" : "Actor BFF API",
-    "version" : "1.0.1",
+    "version" : "1.1.0",
     "description" : "Browser-facing Backbone API for authentication, actors, documents, and notification preferences."
   }
 }
