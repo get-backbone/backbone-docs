@@ -71,10 +71,14 @@ External third-party secrets:
 - `OSS_INDEX_USER` - OSS Index username
 - `CODECOV_TOKEN` - Codecov token for coverage reporting; see [Codecov](https://codecov.io/)
 
-Optional secrets: If you wish to retain frontend ability to 'Login with LinkedIn' you must specify:
+Required for Login with Google (and OAuth refresh-token storage):
+- `GOOGLE_OAUTH2_CLIENT_ID` - Google OAuth 2.0 Web client ID; see [Google Cloud Console credentials](https://console.cloud.google.com/apis/credentials)
+- `GOOGLE_OAUTH2_CLIENT_SECRET` - Google OAuth 2.0 Web client secret
+- `BACKBONE_OAUTH2_REFRESH_TOKEN_ENCRYPTION_KEY` - Encryption key for OAuth2 refresh token encryption (`openssl rand -base64 32`)
+
+  Optional secrets: If you wish to retain frontend ability to 'Login with LinkedIn' you must specify:
 - `LINKEDIN_OAUTH2_CLIENT_ID` - LinkedIn Oauth2 client ID; see [LinkedIn - OAUTH 2.0 Overview](https://learn.microsoft.com/en-gb/linkedin/shared/authentication/authentication)
 - `LINKEDIN_OAUTH2_CLIENT_SECRET` - LinkedIn Oauth2 client secret
-- `BACKBONE_OAUTH2_REFRESH_TOKEN_ENCRYPTION_KEY` - Encryption key for OAuth2 refresh token encryption
 
 ---
 

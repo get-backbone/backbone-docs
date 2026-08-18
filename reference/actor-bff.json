@@ -27,6 +27,10 @@
             "type" : "string",
             "description" : "LinkedIn OAuth sub (unique identifier) for OAuth login"
           },
+          "googleSub" : {
+            "type" : "string",
+            "description" : "Google OAuth sub (unique identifier) for OAuth login"
+          },
           "profilePhotoUrl" : {
             "type" : "string",
             "description" : "URL to profile photo",
@@ -380,23 +384,6 @@
           }
         }
       },
-      "RegisterRequestWithAuthIdentity" : {
-        "description" : "Registration request with authenticated user identity from Cognito",
-        "type" : "object",
-        "required" : [ "authIdentity", "registerRequest" ],
-        "properties" : {
-          "authIdentity" : {
-            "description" : "Authenticated user information from Cognito",
-            "type" : "object",
-            "$ref" : "#/components/schemas/AuthIdentity"
-          },
-          "registerRequest" : {
-            "description" : "User registration details",
-            "type" : "object",
-            "$ref" : "#/components/schemas/RegisterRequest"
-          }
-        }
-      },
       "RegistrationResponse" : {
         "description" : "Response for user registration containing authentication result",
         "type" : "object",
@@ -641,6 +628,30 @@
         }
       }
     },
+    "/auth/google/login" : {
+      "get" : {
+        "summary" : "Start Google login (redirect)",
+        "operationId" : "googleLogin",
+        "tags" : [ "Auth" ],
+        "parameters" : [ {
+          "name" : "redirectUrl",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/linkedin/link" : {
       "get" : {
         "summary" : "Start LinkedIn account linking",
@@ -697,7 +708,7 @@
         "operationId" : "linkedInLogin",
         "tags" : [ "Auth" ],
         "parameters" : [ {
-          "name" : "redirect",
+          "name" : "redirectUrl",
           "in" : "query",
           "schema" : {
             "type" : "string"
