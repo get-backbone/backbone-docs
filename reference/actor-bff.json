@@ -384,6 +384,23 @@
           }
         }
       },
+      "RegisterRequestWithAuthIdentity" : {
+        "description" : "Registration request with authenticated user identity from Cognito",
+        "type" : "object",
+        "required" : [ "authIdentity", "registerRequest" ],
+        "properties" : {
+          "authIdentity" : {
+            "description" : "Authenticated user information from Cognito",
+            "type" : "object",
+            "$ref" : "#/components/schemas/AuthIdentity"
+          },
+          "registerRequest" : {
+            "description" : "User registration details",
+            "type" : "object",
+            "$ref" : "#/components/schemas/RegisterRequest"
+          }
+        }
+      },
       "RegistrationResponse" : {
         "description" : "Response for user registration containing authentication result",
         "type" : "object",
@@ -478,6 +495,30 @@
             "type" : "object",
             "additionalProperties" : { },
             "description" : "Optional template variables to customize the email content"
+          }
+        }
+      },
+      "SocialRegisterRequestWithAuthIdentity" : {
+        "description" : "Social registration request with Cognito AuthIdentity",
+        "type" : "object",
+        "required" : [ "authIdentity", "displayName", "googleSub" ],
+        "properties" : {
+          "authIdentity" : {
+            "description" : "Authenticated identity from Cognito after social login",
+            "type" : "object",
+            "$ref" : "#/components/schemas/AuthIdentity"
+          },
+          "displayName" : {
+            "type" : "string",
+            "description" : "Display name from the identity provider",
+            "pattern" : "\\S",
+            "maxLength" : 255
+          },
+          "googleSub" : {
+            "type" : "string",
+            "description" : "Google OIDC subject identifier",
+            "pattern" : "\\S",
+            "maxLength" : 255
           }
         }
       },
