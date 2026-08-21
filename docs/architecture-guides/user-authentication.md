@@ -23,6 +23,7 @@ Backbone’s model:
 |-------------------------------|--------------------------------------------------------------------------------------------------|
 | **Email/password login**      | First-party UI; server-side authentication against Cognito (no redirect to Cognito hosted pages) |
 | **Self-service registration** | Creates Cognito user and actor profile in one flow                                               |
+| **Google sign-in**            | OAuth2 with short-lived temporary token handoff to the browser                                   |
 | **LinkedIn sign-in**          | OAuth2 with short-lived temporary token handoff to the browser                                   |
 | **Token refresh**             | Long-lived sessions without re-entering credentials on every visit                               |
 | **Browser entry point**       | CloudFront → backend-for-frontend (BFF) → domain services                                        |
@@ -45,6 +46,7 @@ Typical user-facing operations:
 | Sign in             | `POST /auth/login`                                            |
 | Register            | `POST /auth/register`                                         |
 | Refresh session     | `POST /auth/refresh-user-token`                               |
+| Google sign-in      | Redirect flow via `/auth/google/login`, then token exchange   |
 | LinkedIn sign-in    | Redirect flow via `/auth/linkedin/login`, then token exchange |
 | Profile / documents | Authenticated calls through the BFF                           |
 
@@ -60,11 +62,13 @@ Client stores tokens; subsequent calls use Authorization: Bearer
 
 This keeps branding and UX in your product while Cognito still issues standard OIDC-shaped JWTs.
 
-### LinkedIn OAuth2
+### Google and LinkedIn OAuth2
 
-1. User starts LinkedIn sign-in from the product UI. auth-service redirects to LinkedIn with a random **`state`** value for CSRF protection.
-2. After LinkedIn callback, auth-service validates `state`, then issues a **temporary, single-use token** to the browser (not a long-lived JWT in the URL).
+1. User starts Google or LinkedIn sign-in from the product UI. auth-service redirects to the identity provider with an opaque one-time **`state`** nonce and sets an HttpOnly `Path=/auth` CSRF cookie that binds that nonce to the browser.
+2. After the provider callback, auth-service matches `state` to the cookie, consumes the nonce, then issues a **temporary, single-use token** to the browser (not a long-lived JWT in the URL).
 3. Browser exchanges the temporary token for Cognito JWTs via a dedicated endpoint.
+
+LinkedIn **account linking** uses a one-time server-side nonce issued only after the user is authenticated.
 
 Temporary tokens expire quickly and are invalidated on first use — reducing exposure in redirect URLs.
 
@@ -87,18 +91,18 @@ These apply to **human identity** specifically. Platform-wide edge and network a
 2. **Least privilege** — Authentication proves identity; authorization rules apply at the resource layer.
 3. **Assume breach** — Tokens are short-lived and refreshable; a compromised user token does not grant service-to-service identity (see [Service authentication](/docs/service-authentication)).
 4. **No network trust** — Source IP and VPC location are not treated as proof of user identity.
-5. **CSRF model** — API credentials are Bearer JWTs from `localStorage`, not cookies, so classic cookie CSRF does not apply to BFF/API calls. LinkedIn OAuth uses a validated `state` parameter. XSS (token theft) is the primary browser threat and is addressed with edge CSP; see [Platform security posture](/docs/security#csrf-posture).
+5. **CSRF model** — API credentials are Bearer JWTs from `localStorage`, not cookies, so classic cookie CSRF does not apply to BFF/API calls. Google and LinkedIn **login** bind OAuth `state` to an HttpOnly `Path=/auth` CSRF cookie plus Redis consume-once. LinkedIn **linking** uses a one-time server-side nonce issued only after the user is authenticated. XSS (token theft) is the primary browser threat and is addressed with edge CSP; see [Platform security posture](/docs/security#csrf-posture).
 
 User JWT validation results are cached in Redis across ECS tasks for performance; see [Application caching and distributed scale](/docs/caching).
 
 ## Operator expectations
 
-| Topic                   | Expectation                                                                        |
-|-------------------------|------------------------------------------------------------------------------------|
-| **Identity provider**   | Cognito user pool per environment; password policy configured in CDK               |
-| **Social login**        | LinkedIn developer app credentials supplied as deployment secrets                  |
-| **Token storage**       | Browser `localStorage` for JWTs; XSS mitigated with CSP (not cookie CSRF tokens)   |
-| **Future enhancements** | MFA, passkeys, and centralized revocation are roadmap items, not baseline          |
+| Topic                   | Expectation                                                                                                                                            |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Identity provider**   | Cognito user pool per environment; password policy configured in CDK                                                                                   |
+| **Social login**        | Google and LinkedIn developer app credentials supplied as deployment secrets                                                                           |
+| **Token storage**       | Browser `localStorage` for JWTs; XSS mitigated with CSP (not cookie CSRF tokens). OAuth login uses a `Path=/auth` CSRF nonce cookie, not session auth. |
+| **Future enhancements** | MFA, passkeys, and centralized revocation are roadmap items, not baseline                                                                              |
 
 ## Further reading
 

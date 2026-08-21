@@ -18,7 +18,7 @@ For **verified** platform capabilities see [FEATURES.md](/docs/features); for ho
 - [Build & Deploy](#build--deploy)
 - [Troubleshooting](#troubleshooting)
 - [Useful Debugging Commands](#useful-debugging-commands)
-- [Operations (GitHub, IaC, metrics)](/docs/operations)
+- [Cursor Agent Skills](#cursor-agent-skills)
 
 ---
 
@@ -339,3 +339,45 @@ task build:clean build:nuke build:install
 aws ecr get-login-password --region "$AWS_REGION" \
 | docker login --username AWS --password-stdin "$(echo $ECR_URI | cut -d/ -f1)"
 ```
+
+## Cursor Agent Skills
+
+Skills are on-demand playbooks for Cursor Agent (multi-step workflows). Rules stay always-on constraints; skills load only when invoked or when Agent matches your ask to a skill description.
+
+Installed [Plinth](https://github.com/jabrena/plinth) skills live in this repo:
+
+- `.agents/skills/` — skill folders (committed)
+- `skills-lock.json` — source (`jabrena/plinth`) + content hashes (committed)
+
+Spring Boot, Micronaut, Jira, and Azure DevOps skills are intentionally omitted.
+
+### How to use them
+
+In Agent chat:
+
+1. **Slash** — type `/`, search a skill name (e.g. `401-frameworks-quarkus-core`), run it
+2. **Attach** — type `@`, pick a skill, then ask your question
+3. **Automatic** — describe the work; Agent may pull a matching skill from its description (less predictable)
+
+Examples that fit Backbone:
+
+| Goal             | Skill                                        |
+|------------------|----------------------------------------------|
+| Quarkus patterns | `/401-frameworks-quarkus-core`               |
+| REST resources   | `/402-frameworks-quarkus-rest`               |
+| Security         | `/404-frameworks-quarkus-security`           |
+| Maven hygiene    | `/110-java-maven-best-practices`             |
+| Secure coding    | `/124-java-secure-coding`                    |
+| Unit tests       | `/421-frameworks-quarkus-testing-unit-tests` |
+
+### Keeping them in sync
+
+Skills are local copies, not live links to GitHub. They do not auto-update.
+
+```bash
+npx skills update -p -y
+```
+
+That refreshes **already installed** skills from `jabrena/plinth`, updates `.agents/skills/` and `skills-lock.json`. Review the diff and commit when you want the team on the new versions.
+
+Removed skills stay removed unless you `npx skills add` them again.

@@ -143,11 +143,14 @@ Classic cookie-based CSRF therefore does **not** apply to ordinary BFF and servi
 
 Residual risks and controls:
 
-| Concern                               | Baseline control                                                                                  |
-|---------------------------------------|---------------------------------------------------------------------------------------------------|
-| XSS steals tokens from `localStorage` | CloudFront **Content-Security-Policy** (and related edge headers); see edge controls above        |
-| Hostile origins calling the API       | Explicit Quarkus **CORS** allowlists; same-origin UI+API via CloudFront in deployed envs          |
-| OAuth redirect forgery (LinkedIn)     | OAuth2 **`state`** parameter generated and validated on LinkedIn login/link flows in auth-service |
+| Concern                                | Baseline control                                                                                                                              |
+|----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| XSS steals tokens from `localStorage`  | CloudFront **Content-Security-Policy** (and related edge headers); see edge controls above                                                    |
+| Hostile origins calling the API        | Explicit Quarkus **CORS** allowlists; same-origin UI+API via CloudFront in deployed envs                                                      |
+| OAuth redirect forgery (login)         | Opaque one-time `state` in Redis, bound to an HttpOnly `oauth_login_state` cookie (`Path=/auth`, `SameSite=Lax`) on Google and LinkedIn login |
+| OAuth redirect forgery (LinkedIn link) | Opaque one-time Redis nonce carrying actor id/email; linking starts as authenticated XHR so a CSRF cookie is not used                         |
+
+The `oauth_login_state` cookie is a CSRF nonce for OAuth login callbacks only. It is not used for API session authentication and does not store access tokens.
 
 **Explicit non-goals** for the baseline: double-submit CSRF tokens, SameSite cookie session auth, or moving access tokens into HttpOnly cookies. Those patterns belong in a future ADR if the token storage model changes.
 
@@ -313,25 +316,25 @@ Status meaning:
 - Extensible: hardening supported through code and infrastructure extension in the client-owned fork
 - Planned: baseline enhancement tracked on the roadmap
 
-| Control                                                             | Status      | Notes                                                                                                                                            |
-|---------------------------------------------------------------------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| Least-privilege IAM (`no Action: "*"`)                              | Implemented | Repository-authored baseline enforced; wildcard exceptions are bounded and documented.                                                           |
-| OIDC-based CI and CD deployment identity                            | Implemented | GitHub Actions role assumption uses constrained OIDC trust, not long-lived AWS keys.                                                             |
-| Public edge protection (CloudFront WAF and TLS)                     | Implemented | Edge WAF host filtering, rate limiting, and geo controls on the CloudFront distribution.                                                         |
-| Content-Security-Policy at CloudFront edge                          | Implemented | Response headers policy on static and API behaviors; Report-Only outside prod, enforcing in prod. Interim `unsafe-inline` for current UI.        |
-| TLS-only viewers + HSTS at CloudFront edge                          | Implemented | `REDIRECT_TO_HTTPS`, TLS 1.2+; HSTS one-year with `includeSubDomains` (no preload); XCTO and Referrer-Policy.                                    |
-| Browser CORS allowlist (Quarkus)                                    | Implemented | Explicit origins and request headers on actor-bff (and local web-actor); no `*` wildcards. Same-origin via CloudFront in deployed envs.          |
-| CSRF posture (Bearer JWT; OAuth `state`)                            | Implemented | No auth cookies for API calls; LinkedIn OAuth uses `state`. XSS mitigated via CSP, not classic CSRF tokens.                                      |
-| CloudFront origin verification and ALB ingress restriction          | Implemented | Defense in depth: WAF at edge; IPv4 CloudFront prefix list on internet-facing ALB SG; origin verification at ALB listener (primary origin gate). |
-| Static UI delivery of S3 with OAC                                   | Implemented | Private encrypted bucket; no public object access; CloudFront default origin.                                                                    |
-| Internal service authentication and authorization                   | Implemented | Application-layer JWT validation and service authorization controls are active.                                                                  |
-| Runtime isolation and container non-root baseline                   | Implemented | Fargate private-subnet deployment with non-root container runtime baseline.                                                                      |
-| Edge access logging (CloudFront and S3)                             | Implemented | CloudFront access logs and S3 server access logs for static edge and datastore buckets.                                                          |
-| Internal traffic encryption (HTTPS and mTLS for service-to-service) | Implemented | Opt-in via `internalHttps` in `platform-config.yml`: HTTPS listener + ACM + private DNS. ALB→task stays HTTP; mTLS/mesh remain extensible.        |
-| Customer-managed KMS key strategy                                   | Extensible  | Supported through client-owned key management and infrastructure extension.                                                                      |
-| ALB access logging baseline                                         | Implemented | When `governanceEvidenceEnabled` is true; omitted when operators use org-wide evidence stores.                                                   |
-| CloudTrail baseline (regional + global IAM/STS)                     | Implemented | When `governanceEvidenceEnabled` is true; disable when landing zone provides org trail. Set per env in `platform-config.yml`.                    |
-| SIEM integration reference pattern                                  | Documented  | Described under common operator extensions in [Observability architecture](/docs/observability).                                                 |
+| Control                                                             | Status      | Notes                                                                                                                                                                                   |
+|---------------------------------------------------------------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Least-privilege IAM (`no Action: "*"`)                              | Implemented | Repository-authored baseline enforced; wildcard exceptions are bounded and documented.                                                                                                  |
+| OIDC-based CI and CD deployment identity                            | Implemented | GitHub Actions role assumption uses constrained OIDC trust, not long-lived AWS keys.                                                                                                    |
+| Public edge protection (CloudFront WAF and TLS)                     | Implemented | Edge WAF host filtering, rate limiting, and geo controls on the CloudFront distribution.                                                                                                |
+| Content-Security-Policy at CloudFront edge                          | Implemented | Response headers policy on static and API behaviors; Report-Only outside prod, enforcing in prod. Interim `unsafe-inline` for current UI.                                               |
+| TLS-only viewers + HSTS at CloudFront edge                          | Implemented | `REDIRECT_TO_HTTPS`, TLS 1.2+; HSTS one-year with `includeSubDomains` (no preload); XCTO and Referrer-Policy.                                                                           |
+| Browser CORS allowlist (Quarkus)                                    | Implemented | Explicit origins and request headers on actor-bff (and local web-actor); no `*` wildcards. Same-origin via CloudFront in deployed envs.                                                 |
+| CSRF posture (Bearer JWT; OAuth `state` + login CSRF cookie)        | Implemented | No auth cookies for API calls. Google/LinkedIn login bind `state` to `Path=/auth` CSRF cookie and Redis consume-once. LinkedIn linking uses Redis nonce payload. XSS mitigated via CSP. |
+| CloudFront origin verification and ALB ingress restriction          | Implemented | Defense in depth: WAF at edge; IPv4 CloudFront prefix list on internet-facing ALB SG; origin verification at ALB listener (primary origin gate).                                        |
+| Static UI delivery of S3 with OAC                                   | Implemented | Private encrypted bucket; no public object access; CloudFront default origin.                                                                                                           |
+| Internal service authentication and authorization                   | Implemented | Application-layer JWT validation and service authorization controls are active.                                                                                                         |
+| Runtime isolation and container non-root baseline                   | Implemented | Fargate private-subnet deployment with non-root container runtime baseline.                                                                                                             |
+| Edge access logging (CloudFront and S3)                             | Implemented | CloudFront access logs and S3 server access logs for static edge and datastore buckets.                                                                                                 |
+| Internal traffic encryption (HTTPS and mTLS for service-to-service) | Implemented | Opt-in via `internalHttps` in `platform-config.yml`: HTTPS listener + ACM + private DNS. ALB→task stays HTTP; mTLS/mesh remain extensible.                                              |
+| Customer-managed KMS key strategy                                   | Extensible  | Supported through client-owned key management and infrastructure extension.                                                                                                             |
+| ALB access logging baseline                                         | Implemented | When `governanceEvidenceEnabled` is true; omitted when operators use org-wide evidence stores.                                                                                          |
+| CloudTrail baseline (regional + global IAM/STS)                     | Implemented | When `governanceEvidenceEnabled` is true; disable when landing zone provides org trail. Set per env in `platform-config.yml`.                                                           |
+| SIEM integration reference pattern                                  | Documented  | Described under common operator extensions in [Observability architecture](/docs/observability).                                                                                        |
 
 ## IAM wildcard policy
 

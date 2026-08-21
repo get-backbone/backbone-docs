@@ -173,6 +173,34 @@
           }
         }
       },
+      "CreateActorRequest" : {
+        "description" : "Create actor request with Cognito AuthIdentity",
+        "type" : "object",
+        "required" : [ "authIdentity", "displayName" ],
+        "properties" : {
+          "authIdentity" : {
+            "description" : "Authenticated identity from Cognito",
+            "type" : "object",
+            "$ref" : "#/components/schemas/AuthIdentity"
+          },
+          "registerRequest" : {
+            "description" : "Original signup request when created via email/password registration",
+            "type" : "object",
+            "$ref" : "#/components/schemas/RegisterRequest"
+          },
+          "displayName" : {
+            "type" : "string",
+            "description" : "Display name for the actor profile",
+            "pattern" : "\\S",
+            "maxLength" : 255
+          },
+          "googleSub" : {
+            "type" : "string",
+            "description" : "Google OIDC subject identifier when created via Google sign-in",
+            "maxLength" : 255
+          }
+        }
+      },
       "DocumentResponse" : {
         "description" : "Response containing parsed document information",
         "type" : "object",
@@ -356,8 +384,8 @@
         }
       },
       "RegisterRequest" : {
-        "description" : "Request for user registration",
         "type" : "object",
+        "description" : "Request for user registration",
         "required" : [ "name", "emailAddress", "password" ],
         "properties" : {
           "name" : {
@@ -381,23 +409,6 @@
             "pattern" : "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,128}$",
             "minLength" : 8,
             "maxLength" : 128
-          }
-        }
-      },
-      "RegisterRequestWithAuthIdentity" : {
-        "description" : "Registration request with authenticated user identity from Cognito",
-        "type" : "object",
-        "required" : [ "authIdentity", "registerRequest" ],
-        "properties" : {
-          "authIdentity" : {
-            "description" : "Authenticated user information from Cognito",
-            "type" : "object",
-            "$ref" : "#/components/schemas/AuthIdentity"
-          },
-          "registerRequest" : {
-            "description" : "User registration details",
-            "type" : "object",
-            "$ref" : "#/components/schemas/RegisterRequest"
           }
         }
       },
@@ -495,30 +506,6 @@
             "type" : "object",
             "additionalProperties" : { },
             "description" : "Optional template variables to customize the email content"
-          }
-        }
-      },
-      "SocialRegisterRequestWithAuthIdentity" : {
-        "description" : "Social registration request with Cognito AuthIdentity",
-        "type" : "object",
-        "required" : [ "authIdentity", "displayName", "googleSub" ],
-        "properties" : {
-          "authIdentity" : {
-            "description" : "Authenticated identity from Cognito after social login",
-            "type" : "object",
-            "$ref" : "#/components/schemas/AuthIdentity"
-          },
-          "displayName" : {
-            "type" : "string",
-            "description" : "Display name from the identity provider",
-            "pattern" : "\\S",
-            "maxLength" : 255
-          },
-          "googleSub" : {
-            "type" : "string",
-            "description" : "Google OIDC subject identifier",
-            "pattern" : "\\S",
-            "maxLength" : 255
           }
         }
       },
@@ -674,13 +661,6 @@
         "summary" : "Start Google login (redirect)",
         "operationId" : "googleLogin",
         "tags" : [ "Auth" ],
-        "parameters" : [ {
-          "name" : "redirectUrl",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -748,13 +728,6 @@
         "summary" : "Start LinkedIn login (redirect)",
         "operationId" : "linkedInLogin",
         "tags" : [ "Auth" ],
-        "parameters" : [ {
-          "name" : "redirectUrl",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
