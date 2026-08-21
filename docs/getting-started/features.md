@@ -50,7 +50,7 @@ summary: "Discrete inventory of Backbone platform capabilities across identity, 
 - document-service (upload/storage + parsing across SQL / DynamoDB / S3)
 - template-service
 - BFF orchestration (actor / admin persona APIs)
-- reference UIs (`web-actor`, `web-admin`; stateless architecture; static CloudFront/S3 path)
+- stateless reference UI (no client-side state; HATEOAS-aware; static CloudFront/S3 path)
 
 ## Data and messaging
 
