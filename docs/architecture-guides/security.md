@@ -265,7 +265,7 @@ Organization-level controls expected outside baseline platform constructs (or wh
 - ALB access logging to operator-owned buckets and lifecycle controls
 - SIEM integration, alerting, and incident response workflow
 
-Backbone provisions an optional **regional** CloudTrail trail, protected evidence storage, and ALB access logs into that bucket. See [ADR-0027](/docs/0027-governance-evidence-architecture), [Operations — Governance evidence](/docs/operations#4-governance-evidence-backbonegovernancestack), and [Observability architecture](/docs/observability).
+Backbone provisions an optional **regional** CloudTrail trail, protected evidence storage with S3 Object Lock (COMPLIANCE) and stage-aware default retention, and ALB access logs into a companion SSE-S3 bucket. See [ADR-0027](/docs/0027-governance-evidence-architecture), [ADR-0028](/docs/0028-governance-evidence-object-lock), [Operations — Governance evidence](/docs/operations#4-governance-evidence-backbonegovernancestack), and [Observability architecture](/docs/observability).
 
 Platform logging supports operational observability. Audit-grade retention, aggregation, and cross-system correlation are delegated to client environment configuration.
 
@@ -334,6 +334,7 @@ Status meaning:
 | Customer-managed KMS key strategy                                   | Extensible  | Supported through client-owned key management and infrastructure extension.                                                                                                             |
 | ALB access logging baseline                                         | Implemented | When `governanceEvidenceEnabled` is true; omitted when operators use org-wide evidence stores.                                                                                          |
 | CloudTrail baseline (regional + global IAM/STS)                     | Implemented | When `governanceEvidenceEnabled` is true; disable when landing zone provides org trail. Set per env in `platform-config.yml`.                                                           |
+| Immutable CloudTrail evidence archive (Object Lock COMPLIANCE)      | Implemented | Default retention 1 day non-prod / 365 days prod on the KMS evidence bucket. Dedicated security account and legal hold remain operator extensions. See [ADR-0028](/docs/0028-governance-evidence-object-lock). |
 | SIEM integration reference pattern                                  | Documented  | Described under common operator extensions in [Observability architecture](/docs/observability).                                                                                        |
 
 ## IAM wildcard policy

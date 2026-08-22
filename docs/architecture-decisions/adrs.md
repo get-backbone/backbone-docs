@@ -50,3 +50,4 @@ Not all ADRs are published. The records included here:
 - [0025-static-ui-cloudfront-s3.md](/docs/0025-static-ui-cloudfront-s3)
 - [0026-observability-backend-strategy.md](/docs/0026-observability-backend-strategy)
 - [0027-governance-evidence-architecture.md](/docs/0027-governance-evidence-architecture)
+- [0028-governance-evidence-object-lock.md](/docs/0028-governance-evidence-object-lock)

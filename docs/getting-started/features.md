@@ -48,7 +48,7 @@ summary: "Discrete inventory of Backbone platform capabilities across identity, 
 - declarative cross-cutting audit emission
 - notification-service (async email via SES, templates, retries, unsubscribe tokens)
 - document-service (upload/storage + parsing across SQL / DynamoDB / S3)
-- template-service
+- template-service scaffolding enables RAD
 - BFF orchestration (actor / admin persona APIs)
 - stateless reference UI (no client-side state; HATEOAS-aware; static CloudFront/S3 path)
 
@@ -59,7 +59,8 @@ summary: "Discrete inventory of Backbone platform capabilities across identity, 
 - S3 object storage
 - SES email delivery
 - reactor / messaging integration (shared libs)
-- EventBridge audit routing (roadmap path)
+- guaranteed audit message delivery
+- EventBridge audit fan-out / SIEM (roadmap)
 
 ## Platform delivery and infra (AWS)
 

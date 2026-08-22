@@ -207,7 +207,9 @@ See [Observability architecture](/docs/observability) and [ADR-0026](/docs/0026-
 
 ### 4. Governance evidence (BackboneGovernanceStack)
 
-**Optional** — enabled by default via `governanceEvidenceEnabled: true` in `config/src/main/resources/platform-config.yml`. When `true`, CDK deploys `GovernanceStack`: a KMS-encrypted evidence bucket for CloudTrail, an SSE-S3 companion bucket for ALB access logs (ALB does not support KMS log destinations), a **regional** CloudTrail trail (with global IAM/STS events), and ALB access logging on the public and internal load balancers into that companion bucket.
+**Optional** - enabled by default via `governanceEvidenceEnabled: true` in `config/src/main/resources/platform-config.yml`.
+
+When `true`, CDK deploys `GovernanceStack`: a KMS-encrypted CloudTrail evidence bucket, an SSE-S3 companion bucket for ALB access logs, a **regional** CloudTrail trail (with global IAM/STS events), and ALB access logging.
 
 Set `governanceEvidenceEnabled: false` per environment when your organization already operates account- or org-wide CloudTrail and centralized log archives (for example a Superwerker log-archive account), or when the stage should stay lean for integration testing. In that case Backbone skips `GovernanceStack` and does not enable ALB access logs; you re-point edge and API logging to your existing evidence stores and investigation runbooks.
 
@@ -215,7 +217,7 @@ Set `governanceEvidenceEnabled: false` per environment when your organization al
 
 | Source          | Scope                                                                                                                                                        |
 |-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| CloudTrail      | Management events in the **deployment region** plus **global service events** (IAM, STS). Not multi-region — Backbone deploys single-region per environment. |
+| CloudTrail      | Management events in the **deployment region** plus **global service events** (IAM, STS). Not multi-region - Backbone deploys single-region per environment. |
 | ALB access logs | HTTP traffic to Backbone public and internal ALBs only.                                                                                                      |
 
 **Important account boundary:** CloudTrail is an **account-level** service. It cannot be limited to "Backbone stacks only." Any other API activity in the **same region** in that AWS account is also recorded. Backbone evidence is therefore a best fit when:
@@ -240,8 +242,6 @@ environments:
 Default is `internalHttps: false` (HTTP:80 on the private ALB, raw ELB DNS in `BACKBONE_INTERNAL_ALB_URL`). Set `internalHttps: true` on baseline or a per-env override to enable listener HTTPS:443 with a public ACM certificate for `api.{env}.{domainRoot}`, a private hosted zone for VPC-only resolution, and `https://api.{env}.{domainRoot}` for service REST clients.
 
 Flipping the flag is **disruptive**: redeploy Domain, Security, and Runtime together so certificate, security-group port, listener, private DNS, and task env URLs stay aligned. Target groups remain HTTP to Fargate (listener-only TLS). See [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
-
-See [ADR-0027: Governance evidence architecture](/docs/0027-governance-evidence-architecture) and [Platform security posture](/docs/security).
 
 ---
 

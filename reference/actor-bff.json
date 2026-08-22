@@ -620,7 +620,8 @@
             "content" : {
               "application/json" : {
                 "schema" : { }
-              }
+              },
+              "application/hal+json" : { }
             }
           }
         }

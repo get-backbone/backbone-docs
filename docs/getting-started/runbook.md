@@ -40,7 +40,7 @@ Uses existing OIDC role `backbone-github-actions-ci`. Native builds still run in
 
 ## 3) Non-prod infrastructure hibernate
 
-**Hibernate:** workflow **`11 💤 Infra hibernate`** — deletes `RuntimeStack`, `SecurityStack`, `ObservabilityStack`, `DatastoreStack`, `NetworkStack`. Keeps DNS, static edge, CI, ECR, Cognito.
+**Hibernate:** workflow **`11 💤 Infra hibernate`** — deletes `RuntimeStack`, `SecurityStack`, `ObservabilityStack`, `MessagingStack`, `DatastoreStack`, `NetworkStack`. Keeps DNS, static edge, CI, ECR, Cognito.
 
 **Wake:** workflow **`10 🐿️ Infra deploy`**, then app deploys as needed.
 

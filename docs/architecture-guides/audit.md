@@ -30,14 +30,14 @@ Backbone separates **business behaviour** from **audit emission**. Annotated ope
         │
         │  structured AuditEventRequest
         ▼
-  Audit dispatch  ──HTTP (today) ──▶  audit-service  ──▶  PostgreSQL
+  Audit dispatch  ──SQS ──▶  audit-service consumer  ──▶  PostgreSQL
         │
         └── EventBridge (roadmap) ──▶  central consumer / SIEM
 ```
 
-**Today:** emitting services send events to a dedicated **audit-service** over HTTP. Events are stored in PostgreSQL with a stable schema.
+**Today:** emitting services queue events on a dedicated **SQS** queue. **audit-service** consumes the queue and stores events in PostgreSQL (append-only).
 
-**Roadmap:** the same interceptor and publisher can dispatch to **Amazon EventBridge** for centralized ingestion in a security or logging account without changing business services.
+**Roadmap:** the same interceptor and publisher can also fan out to **Amazon EventBridge** for SIEM / multi-account central logging. SQS covers delivery guarantees for application audit ingest.
 
 ## What gets audited
 
@@ -53,10 +53,10 @@ Events carry **event type**, **severity**, **actor identity** (resolved from req
 
 ## Security model
 
-- **Caller authorization** — Only designated platform services may ingest audit events; arbitrary clients cannot append to the audit log.
+- **Caller authorization** — Emitters need IAM permission to send to the audit queue; arbitrary clients cannot append to the audit log via the public API surface.
 - **Structured records** — Events are schema-shaped, not free-text log lines, supporting downstream compliance tooling.
 - **PII awareness** — Operators should review which fields are captured in event metadata; sensitive values should be masked or omitted at emission time.
-- **Async delivery** — Dispatch is designed not to block user-facing latency; delivery failures are logged for operator investigation.
+- **Async delivery** — Dispatch is designed not to block user-facing latency; failed sends and invalid messages (DLQ) are visible for operator investigation.
 
 ## Compliance relevance
 
@@ -70,12 +70,10 @@ Backbone provides the **technical baseline**; retention policies, access control
 
 ## Operator expectations
 
-| Topic              | Expectation                                                                                 |
-|--------------------|---------------------------------------------------------------------------------------------|
-| **Availability**   | audit-service must be reachable from emitting services; failed dispatch should be monitored |
-| **Retention**      | Define Postgres backup and retention to match your framework (SOC 2, HIPAA, etc.)           |
-| **Centralization** | Plan EventBridge or SIEM integration when multi-account central logging is required         |
-| **Local dev**      | Audit can be disabled or pointed at a local audit-service instance for development          |
+| Topic              | Expectation                                                                       |
+|--------------------|-----------------------------------------------------------------------------------|
+| **Retention**      | Define Postgres backup and retention to match your framework (SOC 2, HIPAA, etc.) |
+| **Centralization** | Plan EventBridge or SIEM fan-out when multi-account logging is required           |
 
 ## Further reading
 
