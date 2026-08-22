@@ -60,7 +60,7 @@ summary: "Discrete inventory of Backbone platform capabilities across identity, 
 - SES email delivery
 - reactor / messaging integration (shared libs)
 - guaranteed audit message delivery
-- EventBridge audit fan-out / SIEM (roadmap)
+- EventBridge audit fan-out with SQS ingest (SIEM rules attach as operator extension)
 
 ## Platform delivery and infra (AWS)
 

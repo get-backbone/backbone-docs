@@ -5,17 +5,32 @@ summary: "How Backbone maps to common security and compliance expectations — a
 
 <!-- markdownlint-disable-file MD013 -->
 
-Backbone cannot represent a production deployment as "compliant" on its own. Backbone is not operated as a centralized SaaS platform. Every deployment is forked, extended, configured, and operated inside **AWS accounts owned by the operator**. Compliance outcomes depend on the deployed system, operational controls, organizational processes, and legal agreements — not on the source repository alone.
+Backbone cannot represent a production deployment as "compliant" on its own. Backbone is not operated as a centralized
+SaaS platform. Every deployment is forked, extended, configured, and operated inside **AWS accounts owned by the
+operator**. Compliance outcomes depend on the deployed system, operational controls, organizational processes, and legal
+agreements — not on the source repository alone.
 
-This guide is for architecture review, procurement, and compliance diligence. It maps platform capabilities to control objectives commonly discussed under frameworks such as SOC 2, GDPR, and HIPAA-aligned environments. It is **not** an audit determination, certification, attestation, or legal interpretation. Start with [Platform security posture](/docs/security) for the control baseline this guide maps against.
+This guide is for architecture review, procurement, and compliance diligence. It maps platform capabilities to control
+objectives commonly discussed under frameworks such as SOC 2, GDPR, and HIPAA-aligned environments. It is **not** an
+audit determination, certification, attestation, or legal interpretation. Start
+with [Platform security posture](/docs/security) for the control baseline this guide maps against.
 
 ## Scope and operating model
 
-Backbone ships a security-focused technical baseline designed to support common compliance objectives. The baseline includes identity and access patterns, private networking, edge protection, secrets handling, audit event foundations, and repeatable infrastructure deployment.
+Backbone ships a security-focused technical baseline designed to support common compliance objectives. The baseline
+includes identity and access patterns, private networking, edge protection, secrets handling, audit event foundations,
+and repeatable infrastructure deployment.
 
-Progress indicators in the tables below reflect **what the platform implements** versus what operators must wire, policy, or evidence in their environment.
+Progress indicators in the tables below reflect **what the platform implements** versus what operators must wire,
+policy, or evidence in their environment.
 
-Backbone operates at the **application platform layer**, not as an AWS landing zone. It intentionally avoids mandating a specific AWS Organizations layout or provisioning account- and organization-level security services — for example AWS Organizations security OUs, AWS Config, Security Hub, GuardDuty, or Shield Advanced. Those controls need org-wide delegated administration, account topology, and often already exist in an enterprise landing zone; Backbone cannot assume that shape without conflicting with operator foundations. Operators may run single-account sandboxes or multi-account landing zones. Both paths can satisfy control objectives when required org-level controls are implemented and evidenced in the operator environment. See [ADR-0027](/docs/0027-governance-evidence-architecture).
+Backbone operates at the **application platform layer**, not as an AWS landing zone. It intentionally avoids mandating a
+specific AWS Organizations layout or provisioning account- and organization-level security services — for example AWS
+Organizations security OUs, AWS Config, Security Hub, GuardDuty, or Shield Advanced. Those controls need org-wide
+delegated administration, account topology, and often already exist in an enterprise landing zone; Backbone cannot
+assume that shape without conflicting with operator foundations. Operators may run single-account sandboxes or
+multi-account landing zones. Both paths can satisfy control objectives when required org-level controls are implemented
+and evidenced in the operator environment. See [ADR-0027](/docs/0027-governance-evidence-architecture).
 
 ## Shared responsibility
 
@@ -24,7 +39,8 @@ Backbone operates at the **application platform layer**, not as an AWS landing z
 | **Backbone** | Reference services, libraries, and infrastructure-as-code operators deploy. Security-relevant patterns — authentication, authorization, audit emission, network defaults — are implemented where stated in this guide.                         |
 | **Operator** | Owns AWS accounts, data classification, workforce policies, vendor agreements (for example BAAs for HIPAA, DPAs for GDPR), SOC 2 control operation and evidence, monitoring of the full account, and gap closure beyond the platform baseline. |
 
-Deploying Backbone does not make an operator compliant. Compliance requires the deployed system, operating processes, and legal agreements to work together.
+Deploying Backbone does not make an operator compliant. Compliance requires the deployed system, operating processes,
+and legal agreements to work together.
 
 ## How to read control coverage
 
@@ -42,7 +58,8 @@ The tables below separate three layers auditors typically ask about:
 
 ## Architectural planes
 
-Auditors often partition systems into planes. The table maps that vocabulary to Backbone without prescribing a single account model.
+Auditors often partition systems into planes. The table maps that vocabulary to Backbone without prescribing a single
+account model.
 
 | Plane                          | Meaning in Backbone                                                                  | Where to read more                                                                                                                                                                                                                                                                                         |
 |--------------------------------|--------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -73,7 +90,7 @@ Auditors often partition systems into planes. The table maps that vocabulary to 
 | ✅ | Restricted API origin (not open internet ALB)             | Defense in depth: edge WAF, network allowlisting, origin verification             | Integration testing through the CloudFront hostname |
 | ✅ | Internal service-to-service transport encryption          | Optional HTTPS on the internal ALB (ACM + private DNS);                           | mTLS/mesh if hop-to-task encryption is required     |
 | ✅ | Private connectivity to AWS APIs                          | VPC interface endpoints for secrets, identity, container registry, logging, email | Endpoint policy review                              |
-| ❌ | Advanced perimeter services (for example Shield Advanced) | Not provisioned by default                                                        | Risk-based procurement and operation                |
+| ❌ | Advanced perimeter services (for example Shield Advanced) | Intentionally remains a client decision                                           | Risk-based procurement and operation                |
 
 ### Data protection
 
@@ -99,8 +116,8 @@ Auditors often partition systems into planes. The table maps that vocabulary to 
 
 |    | Capability                                                  | Platform provides                                                                                                                                                                          | Operator still owns                                                         |
 |:--:|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| ✅ | Application audit events to a central audit service         | Annotation-driven emission, SQS ingest queue, PostgreSQL store — [Audit](/docs/audit)                                                                                                      | Retention, access control on audit data, investigation runbooks             |
-| 🟠 | Event-driven audit routing (for example EventBridge)        | SQS covers application ingest delivery; EventBridge fan-out / SIEM remains roadmap                                                                                                         | Enabling multi-account / SIEM fan-out when required                         |
+| ✅ | Application audit events to a central audit service         | Annotation-driven emission, EventBridge bus → SQS ingest → PostgreSQL — [Audit](/docs/audit)                                                                                               | Retention, access control on audit data, investigation runbooks             |
+| ✅ | Event-driven audit routing                                  | Custom bus `audit-events-bus`; baseline rule to SQS; additional SIEM targets attach as rules — [Audit](/docs/audit)                                                                        | Operator SIEM / cross-account rule configuration                            |
 | ✅ | Edge access logging                                         | CloudFront and static-content access logs; ALB access logs when `governanceEvidenceEnabled` is true                                                                                        | Log review, retention, and SIEM integration                                 |
 | ✅ | VPC reject flow logs                                        | Enabled by default; one-year retention in production                                                                                                                                       | Forensic procedures and alert response                                      |
 | ✅ | Immutable central audit archive                             | CloudTrail evidence bucket with S3 Object Lock (COMPLIANCE) and stage-aware retention when governance is enabled — [ADR-0028](/docs/0028-governance-evidence-object-lock)                  | Dedicated security / log-archive account, counsel legal hold, SIEM routing  |
@@ -128,22 +145,15 @@ Auditors often partition systems into planes. The table maps that vocabulary to 
 | ✅ | Dependency update automation        | Renovate configuration in repository (scheduled PRs, grouped updates, automerge) | Dependabot, CodeQL, or equivalent org standards |
 | ✅ | Signed documentation mirror commits | GPG-signed commits on public doc sync                                            | Application release signing policy              |
 
-### Data subject rights and retention
+### Data subject rights, retention, and communication
 
-|    | Capability                         | Platform provides                                                                                          | Operator still owns                                                                                   |
-|:--:|------------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| ❌ | Right to erasure                   | No account-deletion or cross-store erasure API                                                             | Operator procedures (and product features) for Art. 17 across Cognito, RDS, DynamoDB, S3, and backups |
-| ❌ | Personal data export API           | No single cross-store export                                                                               | Articles 15 and 20 procedures and product features                                                    |
-| ❌ | Legal retention and hold           | No legal-hold or counsel-driven retention controls in baseline                                             | Retention schedules, legal hold, and counsel review                                                   |
-| ✅ | Notification unsubscribe integrity | Opaque tokens without PII in URLs — [ADR-0019](/docs/0019-notification-service-unsubscribe-token-security) | Consent records and marketing compliance                                                              |
-
-### Messaging and multi-account posture
-
-|    | Capability                                                    | Platform provides                                                                                                              | Operator still owns                                  |
-|:--:|---------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
-| ✅ | Transactional notifications with templates and rate awareness | [Notifications](/docs/notifications), provider throttling — [ADR-0016](/docs/0016-notification-service-rate-limiting-strategy) | Content policy, bounce handling, subprocessors       |
-| ❌ | AWS Organizations security OU layout                          | Not generated by platform CDK                                                                                                  | Landing zone, log archive, security tooling accounts |
-| ❌ | AWS Config, Security Hub, GuardDuty                           | Not provisioned in baseline                                                                                                    | Org-wide posture and finding remediation             |
+|    | Capability                                                    | Platform provides                                                                                                              | Operator still owns                                                                                   |
+|:--:|---------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| ❌ | Right to erasure                                              | No account-deletion or cross-store erasure API                                                                                 | Operator procedures (and product features) for Art. 17 across Cognito, RDS, DynamoDB, S3, and backups |
+| ❌ | Personal data export API                                      | No single cross-store export                                                                                                   | Articles 15 and 20 procedures and product features                                                    |
+| ❌ | Legal retention and hold                                      | No legal-hold or counsel-driven retention controls in baseline                                                                 | Retention schedules, legal hold, and counsel review                                                   |
+| ✅ | Notification unsubscribe integrity                            | Opaque tokens without PII in URLs — [ADR-0019](/docs/0019-notification-service-unsubscribe-token-security)                     | Consent records and marketing compliance                                                              |
+| ✅ | Transactional notifications with templates and rate awareness | [Notifications](/docs/notifications), provider throttling — [ADR-0016](/docs/0016-notification-service-rate-limiting-strategy) | Content and marketing policy, bounce handling, subprocessor DPAs with notification providers          |
 
 ## SOC 2 (Trust Services Criteria) quick map
 
@@ -157,13 +167,21 @@ Typical mappings auditors discuss. Criteria labels vary by report.
 
 ## GDPR-oriented notes
 
-- **Controller vs processor**: Operators are typically controllers for their users' data. Backbone is a tool they operate. Legal roles depend on contracts and facts, not this document.
-- **Technical measures**: TLS at the public edge, encryption at rest on managed datastores, secrets handling, and audit hooks support Article 32 security-of-processing discussions when operators complete logging, monitoring, and incident practices.
-- **Data subject rights**: Operators implement procedures — and often product features — for access, rectification, erasure, and portability across Cognito, relational stores, DynamoDB, and object storage.
+- **Controller vs processor**: Operators are typically controllers for their users' data. Backbone is software they
+  operate. Legal roles depend on contracts and facts, not this document.
+- **Technical measures**: TLS at the public edge, encryption at rest on managed datastores, secrets handling, and audit
+  hooks support Article 32 security-of-processing discussions when operators complete logging, monitoring, and incident
+  practices.
+- **Data subject rights**: Operators implement procedures — and often product features — for access, rectification,
+  erasure, and portability across Cognito, relational stores, DynamoDB, and object storage.
 
 ## HIPAA-oriented notes (high level)
 
-HIPAA compliance depends on a BAA, scoped systems, and operational safeguards. Backbone can support technical safeguards commonly expected in HIPAA-aligned deployments — access control, audit records, encryption, transmission security — when deployed and operated appropriately. This document does not offer a BAA. Operators must classify PHI, close remaining gaps such as multi-account log archives and complete monitoring where required, and execute vendor agreements with subprocessors including AWS.
+HIPAA compliance depends on a BAA, scoped systems, and operational safeguards. Backbone can support technical safeguards
+commonly expected in HIPAA-aligned deployments — access control, audit records, encryption, transmission security — when
+deployed and operated appropriately. This document does not offer a BAA. Operators must classify PHI, close remaining
+gaps such as multi-account log archives and complete monitoring where required, and execute vendor agreements with
+subprocessors including AWS.
 
 ## Operator expectations
 

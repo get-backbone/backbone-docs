@@ -19,6 +19,18 @@ Ad-hoc application logging is insufficient for audit and compliance use cases:
 
 Backbone separates **business behaviour** from **audit emission**. Annotated operations produce structured audit records with actor identity, event type, severity, and contextual metadata.
 
+## EventBridge bus
+
+Emitters publish once to a custom **EventBridge** bus (`audit-events-bus`). Routing is infrastructure: rules select targets. The **baseline** target is the existing **SQS** ingest queue (`backbone-audit-events`); **audit-service** consumes that queue into PostgreSQL.
+
+**Why this shape**
+
+- Compliance needs event-driven routing (fan-out to SIEM / multi-account) without changing every emitter.
+- SQS remains the durable buffer and DLQ path for application audit ingest.
+- Additional consumers (SIEM, log archive, partner destinations) attach as new EventBridge rules — Open/Closed at the infrastructure boundary.
+
+HTTP and SQS dispatcher types remain for possible future use; the active producer is EventBridge only.
+
 ## Architectural overview
 
 ```
@@ -30,14 +42,11 @@ Backbone separates **business behaviour** from **audit emission**. Annotated ope
         │
         │  structured AuditEventRequest
         ▼
-  Audit dispatch  ──SQS ──▶  audit-service consumer  ──▶  PostgreSQL
-        │
-        └── EventBridge (roadmap) ──▶  central consumer / SIEM
+  Audit dispatch  ──EventBridge (audit-events-bus)──▶  rules
+        │                                                 │
+        │                                                 ├── audit-ingest → SQS → audit-service → PostgreSQL
+        │                                                 └── (operator) SIEM / other targets
 ```
-
-**Today:** emitting services queue events on a dedicated **SQS** queue. **audit-service** consumes the queue and stores events in PostgreSQL (append-only).
-
-**Roadmap:** the same interceptor and publisher can also fan out to **Amazon EventBridge** for SIEM / multi-account central logging. SQS covers delivery guarantees for application audit ingest.
 
 ## What gets audited
 
@@ -53,10 +62,10 @@ Events carry **event type**, **severity**, **actor identity** (resolved from req
 
 ## Security model
 
-- **Caller authorization** — Emitters need IAM permission to send to the audit queue; arbitrary clients cannot append to the audit log via the public API surface.
+- **Caller authorization** — Emitters need IAM `events:PutEvents` on the audit bus; arbitrary clients cannot append via the public API surface.
 - **Structured records** — Events are schema-shaped, not free-text log lines, supporting downstream compliance tooling.
 - **PII awareness** — Operators should review which fields are captured in event metadata; sensitive values should be masked or omitted at emission time.
-- **Async delivery** — Dispatch is designed not to block user-facing latency; failed sends and invalid messages (DLQ) are visible for operator investigation.
+- **Async delivery** — Dispatch is designed not to block user-facing latency; failed puts and invalid queue messages (DLQ) are visible for operator investigation.
 
 ## Compliance relevance
 
@@ -65,15 +74,16 @@ Audit logging supports common diligence questions:
 - Can you show **who authenticated** and when?
 - Can you trace **security-relevant actions** across services?
 - Is there a **central store** queryable for investigations?
+- Can you **fan out** audit events to SIEM without rewriting emitters?
 
-Backbone provides the **technical baseline**; retention policies, access controls on audit data, and legal hold processes remain **operator responsibilities**. See [Compliance](/docs/compliance) for control mapping.
+Backbone provides the **technical baseline**; retention policies, access controls on audit data, legal hold, and additional EventBridge targets remain **operator responsibilities**. See [Compliance](/docs/compliance) for control mapping.
 
 ## Operator expectations
 
 | Topic              | Expectation                                                                       |
 |--------------------|-----------------------------------------------------------------------------------|
 | **Retention**      | Define Postgres backup and retention to match your framework (SOC 2, HIPAA, etc.) |
-| **Centralization** | Plan EventBridge or SIEM fan-out when multi-account logging is required           |
+| **Centralization** | Attach SIEM / cross-account rules to `audit-events-bus` (exported ARN/name)       |
 
 ## Further reading
 
