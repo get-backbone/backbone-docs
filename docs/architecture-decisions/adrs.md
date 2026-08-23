@@ -51,3 +51,4 @@ Not all ADRs are published. The records included here:
 - [0026-observability-backend-strategy.md](/docs/0026-observability-backend-strategy)
 - [0027-governance-evidence-architecture.md](/docs/0027-governance-evidence-architecture)
 - [0028-governance-evidence-object-lock.md](/docs/0028-governance-evidence-object-lock)
+- [0029-customer-managed-kms-per-domain.md](/docs/0029-customer-managed-kms-per-domain)

@@ -77,31 +77,31 @@ account model.
 | ✅ | Human authentication (JWT via Amazon Cognito)             | User pools, password policies, stateless token model                               | Access reviews, administrator MFA, workforce IdP integration  |
 | ✅ | Service-to-service identity and caller authorization      | Dedicated service pool, per-request validation, explicit caller restrictions       | IAM role alignment per environment, service account lifecycle |
 | ✅ | AWS API access from workloads via short-lived credentials | ECS task roles issue temporary credentials; no long-lived IAM user keys at runtime | Role scoping reviews and evidence per account                 |
-| ❌ | Enterprise SSO (SAML or OIDC IdP federation)              | Cognito-native flows as baseline                                                   | IdP federation design and operation                           |
+| ❌ | Enterprise SSO (SAML or OIDC IdP federation)              | Intentionally remains a client decision                                            | IdP federation design and operation                           |
 | ✅ | CI/CD deployment without long-lived AWS keys              | GitHub Actions OIDC to constrained deployment roles                                | Production approval, segregation of duties, release records   |
 
 ### Network and edge
 
-|    | Capability                                                | Platform provides                                                                 | Operator still owns                                 |
-|:--:|-----------------------------------------------------------|-----------------------------------------------------------------------------------|-----------------------------------------------------|
-| ✅ | VPC per environment with public/private segmentation      | Dedicated VPC, restricted default security groups                                 | Account layout and peering decisions                |
-| ✅ | Workloads in private subnets                              | ECS Fargate tasks without public IPs                                              | Capacity and scaling policy                         |
-| ✅ | CloudFront edge with WAF                                  | TLS termination, host allowlist, rate limits, geo controls                        | WAF tuning, false-positive review, monitoring       |
-| ✅ | Restricted API origin (not open internet ALB)             | Defense in depth: edge WAF, network allowlisting, origin verification             | Integration testing through the CloudFront hostname |
-| ✅ | Internal service-to-service transport encryption          | Optional HTTPS on the internal ALB (ACM + private DNS);                           | mTLS/mesh if hop-to-task encryption is required     |
-| ✅ | Private connectivity to AWS APIs                          | VPC interface endpoints for secrets, identity, container registry, logging, email | Endpoint policy review                              |
-| ❌ | Advanced perimeter services (for example Shield Advanced) | Intentionally remains a client decision                                           | Risk-based procurement and operation                |
+|    | Capability                                           | Platform provides                                                                 | Operator still owns                                 |
+|:--:|------------------------------------------------------|-----------------------------------------------------------------------------------|-----------------------------------------------------|
+| ✅ | VPC per environment with public/private segmentation | Dedicated VPC, restricted default security groups                                 | Account layout and peering decisions                |
+| ✅ | Workloads in private subnets                         | ECS Fargate tasks without public IPs                                              | Capacity and scaling policy                         |
+| ✅ | CloudFront edge with WAF                             | TLS termination, host allowlist, rate limits, geo controls                        | WAF tuning, false-positive review, monitoring       |
+| ✅ | Restricted API origin (not open internet ALB)        | Defense in depth: edge WAF, network allowlisting, origin verification             | Integration testing through the CloudFront hostname |
+| ✅ | Internal service-to-service transport encryption     | Optional HTTPS on the internal ALB (ACM + private DNS);                           | mTLS/mesh if hop-to-task encryption is required     |
+| ✅ | Private connectivity to AWS APIs                     | VPC interface endpoints for secrets, identity, container registry, logging, email | Endpoint policy review                              |
+| ❌ | Advanced perimeter services (e.g. Shield Advanced)   | Intentionally remains a client decision                                           | Risk-based procurement and operation                |
 
 ### Data protection
 
-|    | Capability                                              | Platform provides                                                                      | Operator still owns                                                                                     |
-|:--:|---------------------------------------------------------|----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| ✅ | PostgreSQL encryption at rest                           | Encrypted RDS in private subnets                                                       | Data classification, key custody if CMK required                                                        |
-| ✅ | Network isolation for relational data                   | Security groups limit database access to application tasks                             | Tenant boundary design in application layer                                                             |
-| ✅ | Automated relational backups with stage-based retention | Backup retention varies by environment stage                                           | RPO/RTO targets and restore testing                                                                     |
-| ✅ | DynamoDB and S3 for platform data                       | Default encryption on managed datastores                                               | Per-table and per-bucket classification                                                                 |
-| ❌ | Customer-managed KMS keys everywhere                    | Not in platform baseline; AWS-managed keys in the standard deploy                      | CMK via fork/extension where regulators or contracts require it                                         |
-| ✅ | Single-tenant deployment isolation                      | One client environment per owned AWS account; VPC and data plane scoped to that deploy | If the fork later becomes multi-tenant in-process, row/org isolation in domain services and data models |
+|    | Capability                                              | Platform provides                                                                                                                                          | Operator still owns                                                                                     |
+|:--:|---------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| ✅ | PostgreSQL encryption at rest                           | Encrypted RDS in private subnets                                                                                                                           | Data classification, key custody if CMK required                                                        |
+| ✅ | Network isolation for relational data                   | Security groups limit database access to application tasks                                                                                                 | Tenant boundary design in application layer                                                             |
+| ✅ | Automated relational backups with stage-based retention | Backup retention varies by environment stage                                                                                                               | RPO/RTO targets and restore testing                                                                     |
+| ✅ | DynamoDB and S3 for platform data                       | Default encryption on managed datastores                                                                                                                   | Per-table and per-bucket classification                                                                 |
+| ✅ | Customer-managed KMS keys (configurable)                | When enabled, CMKs (provisioned or BYOK) for RDS, Redis, DynamoDB, application S3, Secrets Manager, audit SQS, static-edge assets, and governance evidence | BYOK key policies and rotation evidence                                                                 |
+| ✅ | Single-tenant deployment isolation                      | One client environment per owned AWS account; VPC and data plane scoped to that deploy                                                                     | If the fork later becomes multi-tenant in-process, row/org isolation in domain services and data models |
 
 ### Secrets and configuration
 
@@ -114,16 +114,16 @@ account model.
 
 ### Audit and logging
 
-|    | Capability                                                  | Platform provides                                                                                                                                                                          | Operator still owns                                                         |
-|:--:|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| ✅ | Application audit events to a central audit service         | Annotation-driven emission, EventBridge bus → SQS ingest → PostgreSQL — [Audit](/docs/audit)                                                                                               | Retention, access control on audit data, investigation runbooks             |
-| ✅ | Event-driven audit routing                                  | Custom bus `audit-events-bus`; baseline rule to SQS; additional SIEM targets attach as rules — [Audit](/docs/audit)                                                                        | Operator SIEM / cross-account rule configuration                            |
-| ✅ | Edge access logging                                         | CloudFront and static-content access logs; ALB access logs when `governanceEvidenceEnabled` is true                                                                                        | Log review, retention, and SIEM integration                                 |
-| ✅ | VPC reject flow logs                                        | Enabled by default; one-year retention in production                                                                                                                                       | Forensic procedures and alert response                                      |
-| ✅ | Immutable central audit archive                             | CloudTrail evidence bucket with S3 Object Lock (COMPLIANCE) and stage-aware retention when governance is enabled — [ADR-0028](/docs/0028-governance-evidence-object-lock)                  | Dedicated security / log-archive account, counsel legal hold, SIEM routing  |
-| ✅ | Regional CloudTrail and evidence bucket                     | `BackboneGovernanceStack` when `governanceEvidenceEnabled` is true (regional trail + global IAM/STS; account-scoped, not stack-scoped) — [Observability architecture](/docs/observability) | Disable when org-wide trail exists; dedicated workload account recommended  |
-| ✅ | Governance evidence protection (KMS, versioning, lifecycle) | Dedicated evidence bucket with encryption, versioning, Object Lock, and stage-aware lifecycle when governance stack deploys                                                                | Retention policy tuning, legal hold, and SIEM routing remain operator-owned |
-| ✅ | PII-safe logging discipline                                 | JSON logging, correlation MDC, `sensitive-data-mask` filter on deployed profiles — [Observability architecture](/docs/observability)                                                       | Log review, DLP, and data-minimization policy                               |
+|    | Capability                                                         | Platform provides                                                                                                                                                                          | Operator still owns                                                         |
+|:--:|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| ✅ | Application audit events to a central audit service                | Annotation-driven emission, EventBridge bus → SQS ingest → PostgreSQL — [Audit](/docs/audit)                                                                                               | Retention, access control on audit data, investigation runbooks             |
+| ✅ | Event-driven audit routing                                         | Custom bus `audit-events-bus`; baseline rule to SQS; additional SIEM targets attach as rules — [Audit](/docs/audit)                                                                        | Operator SIEM / cross-account rule configuration                            |
+| ✅ | Edge access logging                                                | CloudFront and static-content access logs; ALB access logs when `governanceEvidenceEnabled` is true                                                                                        | Log review, retention, and SIEM integration                                 |
+| ✅ | VPC reject flow logs                                               | Enabled by default; one-year retention in production                                                                                                                                       | Forensic procedures and alert response                                      |
+| ✅ | Immutable central audit archive                                    | CloudTrail evidence bucket with S3 Object Lock (COMPLIANCE) and stage-aware retention when governance is enabled — [ADR-0028](/docs/0028-governance-evidence-object-lock)                  | Dedicated security / log-archive account, counsel legal hold, SIEM routing  |
+| ✅ | Regional CloudTrail and evidence bucket                            | `BackboneGovernanceStack` when `governanceEvidenceEnabled` is true (regional trail + global IAM/STS; account-scoped, not stack-scoped) — [Observability architecture](/docs/observability) | Disable when org-wide trail exists; dedicated workload account recommended  |
+| ✅ | Governance evidence protection (encryption, versioning, lifecycle) | Dedicated evidence bucket with SSE-S3 or CMK, versioning, Object Lock, and stage-aware lifecycle when governance stack deploys                                                             | Retention policy tuning, legal hold, and SIEM routing remain operator-owned |
+| ✅ | PII-safe logging discipline                                        | JSON logging, correlation MDC, `sensitive-data-mask` filter on deployed profiles — [Observability architecture](/docs/observability)                                                       | Log review, DLP, and data-minimization policy                               |
 
 ### Observability
 
@@ -152,8 +152,8 @@ account model.
 | ❌ | Right to erasure                                              | No account-deletion or cross-store erasure API                                                                                 | Operator procedures (and product features) for Art. 17 across Cognito, RDS, DynamoDB, S3, and backups |
 | ❌ | Personal data export API                                      | No single cross-store export                                                                                                   | Articles 15 and 20 procedures and product features                                                    |
 | ❌ | Legal retention and hold                                      | No legal-hold or counsel-driven retention controls in baseline                                                                 | Retention schedules, legal hold, and counsel review                                                   |
-| ✅ | Notification unsubscribe integrity                            | Opaque tokens without PII in URLs — [ADR-0019](/docs/0019-notification-service-unsubscribe-token-security)                     | Consent records and marketing compliance                                                              |
 | ✅ | Transactional notifications with templates and rate awareness | [Notifications](/docs/notifications), provider throttling — [ADR-0016](/docs/0016-notification-service-rate-limiting-strategy) | Content and marketing policy, bounce handling, subprocessor DPAs with notification providers          |
+| ✅ | Notification unsubscribe integrity                            | Opaque tokens without PII in URLs — [ADR-0019](/docs/0019-notification-service-unsubscribe-token-security)                     | Consent records and marketing compliance                                                              |
 
 ## SOC 2 (Trust Services Criteria) quick map
 
@@ -185,13 +185,13 @@ subprocessors including AWS.
 
 ## Operator expectations
 
-| Topic                 | Expectation                                                                                                                                                                                      |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Control ownership** | Map platform capabilities to your control framework; assign owners for every 🟠 and ❌ row above                                                                                                 |
-| **Evidence**          | Maintain policies, access reviews, backup tests, and incident records independent of Backbone source                                                                                             |
-| **Extensions**        | Use the fork model to add CMKs, mTLS/mesh, SIEM, and org-wide security services where required; set `governanceEvidenceEnabled: false` when org CloudTrail already covers the account            |
-| **Legal agreements**  | Execute BAAs, DPAs, and subprocessors agreements appropriate to your jurisdiction and data types                                                                                                 |
-| **Landing zones**     | If using an enterprise landing zone (for example [Superwerker](https://superwerker.cloud/)), map Backbone objectives into that foundation rather than reshaping the organization around Backbone |
+| Topic                 | Expectation                                                                                                              |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------|
+| **Control ownership** | Map platform capabilities to your control framework; assign owners for every 🟠 and ❌ row above                         |
+| **Evidence**          | Maintain policies, access reviews, backup tests, and incident records independent of Backbone source                     |
+| **Extensions**        | Add mTLS/mesh, SIEM, and org-wide security services where required                                                       |
+| **Legal agreements**  | Execute BAAs, DPAs, and subprocessors agreements appropriate to your jurisdiction and data types                         |
+| **Landing zones**     | If using an enterprise landing zone, map Backbone objectives into that foundation rather than reshaping the organization |
 
 ## Further reading
 

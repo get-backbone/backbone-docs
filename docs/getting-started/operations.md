@@ -243,6 +243,26 @@ Default is `internalHttps: false` (HTTP:80 on the private ALB, raw ELB DNS in `B
 
 Flipping the flag is **disruptive**: redeploy Domain, Security, and Runtime together so certificate, security-group port, listener, private DNS, and task env URLs stay aligned. Target groups remain HTTP to Fargate (listener-only TLS). See [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
 
+### Customer-managed KMS (`customerManagedKms`)
+
+Default is `customerManagedKms: false` (AWS-managed encryption at rest). Set before first deploy:
+
+```yaml
+baseline:
+  customerManagedKms: true   # provision one CMK per domain
+```
+
+Or BYOK (optional ARNs; omitted domains are provisioned)
+
+```yaml
+baseline:
+  customerManagedKms:
+    datastoreCmkArn: arn:aws:kms:eu-west-1:123456789012:key/...
+    secretsCmkArn: arn:aws:kms:eu-west-1:123456789012:key/...
+```
+
+Greenfield only - no migration for existing encrypted resources. Documented exceptions (SSE-S3 log-delivery sinks; AWS-managed CloudWatch/flow logs, AMP/AMG, Cognito) are in [ADR-0029](/docs/0029-customer-managed-kms-per-domain).
+
 ---
 
 ## CDK and AWS

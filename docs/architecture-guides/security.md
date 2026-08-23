@@ -195,9 +195,8 @@ Encryption at rest posture in the baseline:
 - S3 buckets are provisioned with server-side encryption (`S3_MANAGED`) and SSL enforcement, including static UI, edge access-log, and datastore buckets
 - DynamoDB tables use DynamoDB-managed encryption at rest by default
 - RDS PostgreSQL instances use storage encryption with an AWS-managed KMS key
-- Secrets Manager data is encrypted at rest through AWS KMS-backed service behavior
-
-Client hardening option: customer-managed KMS keys may be introduced through client-owned infrastructure extension in a fork but are not part of the baseline platform configuration.
+- Secrets Manager data is encrypted at rest through AWS KMS-backed service behaviour
+- Infrastructure provisioning bootstrap allows either AWS-maanaged keys, platform-provisioned CMKs or external BYOK ARNs. See [ADR-0029](/docs/0029-customer-managed-kms-per-domain).
 
 Encryption in transit posture in the baseline:
 
@@ -308,7 +307,7 @@ For the platform architecture context behind these decisions, review the ADR ind
 
 ## Security control status matrix
 
-This matrix summarizes security-relevant platform controls and maturity state for architecture and procurement review.
+This matrix summarizes security-relevant platform controls and maturity state for architecture and procurement review. Enablement, defaults, and operator configuration live in [Operations](/docs/operations) and [Development](/docs/development) (including the platform-config bootstrap task), not in this guide.
 
 Status meaning:
 
@@ -316,26 +315,26 @@ Status meaning:
 - Extensible: hardening supported through code and infrastructure extension in the client-owned fork
 - Planned: baseline enhancement tracked on the roadmap
 
-| Control                                                             | Status      | Notes                                                                                                                                                                                   |
-|---------------------------------------------------------------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Least-privilege IAM (`no Action: "*"`)                              | Implemented | Repository-authored baseline enforced; wildcard exceptions are bounded and documented.                                                                                                  |
-| OIDC-based CI and CD deployment identity                            | Implemented | GitHub Actions role assumption uses constrained OIDC trust, not long-lived AWS keys.                                                                                                    |
-| Public edge protection (CloudFront WAF and TLS)                     | Implemented | Edge WAF host filtering, rate limiting, and geo controls on the CloudFront distribution.                                                                                                |
-| Content-Security-Policy at CloudFront edge                          | Implemented | Response headers policy on static and API behaviors; Report-Only outside prod, enforcing in prod. Interim `unsafe-inline` for current UI.                                               |
-| TLS-only viewers + HSTS at CloudFront edge                          | Implemented | `REDIRECT_TO_HTTPS`, TLS 1.2+; HSTS one-year with `includeSubDomains` (no preload); XCTO and Referrer-Policy.                                                                           |
-| Browser CORS allowlist (Quarkus)                                    | Implemented | Explicit origins and request headers on actor-bff (and local web-actor); no `*` wildcards. Same-origin via CloudFront in deployed envs.                                                 |
-| CSRF posture (Bearer JWT; OAuth `state` + login CSRF cookie)        | Implemented | No auth cookies for API calls. Google/LinkedIn login bind `state` to `Path=/auth` CSRF cookie and Redis consume-once. LinkedIn linking uses Redis nonce payload. XSS mitigated via CSP. |
-| CloudFront origin verification and ALB ingress restriction          | Implemented | Defense in depth: WAF at edge; IPv4 CloudFront prefix list on internet-facing ALB SG; origin verification at ALB listener (primary origin gate).                                        |
-| Static UI delivery of S3 with OAC                                   | Implemented | Private encrypted bucket; no public object access; CloudFront default origin.                                                                                                           |
-| Internal service authentication and authorization                   | Implemented | Application-layer JWT validation and service authorization controls are active.                                                                                                         |
-| Runtime isolation and container non-root baseline                   | Implemented | Fargate private-subnet deployment with non-root container runtime baseline.                                                                                                             |
-| Edge access logging (CloudFront and S3)                             | Implemented | CloudFront access logs and S3 server access logs for static edge and datastore buckets.                                                                                                 |
-| Internal traffic encryption (HTTPS and mTLS for service-to-service) | Implemented | Opt-in via `internalHttps` in `platform-config.yml`: HTTPS listener + ACM + private DNS. ALB→task stays HTTP; mTLS/mesh remain extensible.                                              |
-| Customer-managed KMS key strategy                                   | Extensible  | Supported through client-owned key management and infrastructure extension.                                                                                                             |
-| ALB access logging baseline                                         | Implemented | When `governanceEvidenceEnabled` is true; omitted when operators use org-wide evidence stores.                                                                                          |
-| CloudTrail baseline (regional + global IAM/STS)                     | Implemented | When `governanceEvidenceEnabled` is true; disable when landing zone provides org trail. Set per env in `platform-config.yml`.                                                           |
-| Immutable CloudTrail evidence archive (Object Lock COMPLIANCE)      | Implemented | Default retention 1 day non-prod / 365 days prod on the KMS evidence bucket. Dedicated security account and legal hold remain operator extensions. See [ADR-0028](/docs/0028-governance-evidence-object-lock). |
-| SIEM integration reference pattern                                  | Documented  | Described under common operator extensions in [Observability architecture](/docs/observability).                                                                                        |
+| Control                                                    | Status      | Notes                                                                                                                                                               |
+|------------------------------------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Least-privilege IAM                                        | Implemented | Narrow action and resource scoping by default; bounded wildcards only where AWS APIs require them (see [IAM wildcard policy](#iam-wildcard-policy)).                |
+| OIDC-based CI and CD deployment identity                   | Implemented | Constrained GitHub Actions role assumption; no long-lived AWS keys for routine deploys.                                                                             |
+| Public edge protection (WAF and TLS)                       | Implemented | Viewer-facing WAF and TLS at the public edge entry point.                                                                                                           |
+| Content-Security-Policy at the edge                        | Implemented | CSP on static and API edge behaviors; report-only outside production, enforcing in production.                                                                      |
+| TLS-only viewers and HSTS at the edge                      | Implemented | HTTPS redirect, modern TLS floor, and browser hardening headers (HSTS, XCTO, Referrer-Policy).                                                                      |
+| Browser CORS allowlist                                     | Implemented | Explicit origins and headers for browser-facing APIs; no origin wildcards.                                                                                          |
+| CSRF posture                                               | Implemented | Bearer JWT for API auth (not session cookies); OAuth login uses one-time state binding. See [CSRF posture](#csrf-posture).                                          |
+| CloudFront origin verification and ALB ingress restriction | Implemented | Defense in depth at edge, network, and origin listener. See [CloudFront origin protection](#cloudfront-origin-protection-defense-in-depth).                         |
+| Static UI delivery with private origin access              | Implemented | Private encrypted object store; no public object access; served only through the edge distribution.                                                                 |
+| Internal service authentication and authorization          | Implemented | Application-layer JWT validation and service authorization on protected calls.                                                                                      |
+| Runtime isolation and non-root container baseline          | Implemented | Private-subnet container runtime with non-root execution baseline.                                                                                                  |
+| Edge access logging                                        | Implemented | Access logs for the public edge and related content stores.                                                                                                         |
+| Internal traffic encryption (HTTPS; mTLS optional)         | Implemented | Opt-in HTTPS on the internal service path; mTLS / mesh remain extensible. See [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).                           |
+| Customer-managed KMS key strategy                          | Implemented | Opt-in customer-managed keys (platform-provisioned or BYOK) with documented scope exceptions. See [ADR-0029](/docs/0029-customer-managed-kms-per-domain).           |
+| ALB access logging baseline                                | Implemented | Optional with platform governance evidence; omit when operators use org-wide evidence stores.                                                                       |
+| CloudTrail baseline                                        | Implemented | Optional regional trail (including global IAM/STS events); omit when a landing-zone org trail already covers the account.                                           |
+| Immutable CloudTrail evidence archive                      | Implemented | Object Lock COMPLIANCE archive with stage-aware retention; key management aligns with the CMK strategy. See [ADR-0028](/docs/0028-governance-evidence-object-lock). |
+| SIEM integration reference pattern                         | Documented  | Operator extension pattern in [Observability architecture](/docs/observability).                                                                                    |
 
 ## IAM wildcard policy
 
