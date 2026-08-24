@@ -5,32 +5,17 @@ summary: "How Backbone maps to common security and compliance expectations — a
 
 <!-- markdownlint-disable-file MD013 -->
 
-Backbone cannot represent a production deployment as "compliant" on its own. Backbone is not operated as a centralized
-SaaS platform. Every deployment is forked, extended, configured, and operated inside **AWS accounts owned by the
-operator**. Compliance outcomes depend on the deployed system, operational controls, organizational processes, and legal
-agreements — not on the source repository alone.
+Backbone cannot represent a production deployment as "compliant" on its own. Backbone is not operated as a centralized SaaS platform. Every deployment is forked, extended, configured, and operated inside **AWS accounts owned by the operator**. Compliance outcomes depend on the deployed system, operational controls, organizational processes, and legal agreements — not on the source repository alone.
 
-This guide is for architecture review, procurement, and compliance diligence. It maps platform capabilities to control
-objectives commonly discussed under frameworks such as SOC 2, GDPR, and HIPAA-aligned environments. It is **not** an
-audit determination, certification, attestation, or legal interpretation. Start
-with [Platform security posture](/docs/security) for the control baseline this guide maps against.
+This guide is for architecture review, procurement, and compliance diligence. It maps platform capabilities to control objectives commonly discussed under frameworks such as SOC 2, GDPR, and HIPAA-aligned environments. It is **not** an audit determination, certification, attestation, or legal interpretation. Start with [Platform security posture](/docs/security) for the control baseline this guide maps against.
 
 ## Scope and operating model
 
-Backbone ships a security-focused technical baseline designed to support common compliance objectives. The baseline
-includes identity and access patterns, private networking, edge protection, secrets handling, audit event foundations,
-and repeatable infrastructure deployment.
+Backbone ships a security-focused technical baseline designed to support common compliance objectives. The baseline includes identity and access patterns, private networking, edge protection, secrets handling, audit event foundations, and repeatable infrastructure deployment.
 
-Progress indicators in the tables below reflect **what the platform implements** versus what operators must wire,
-policy, or evidence in their environment.
+Progress indicators in the tables below reflect **what the platform implements** versus what operators must wire, policy, or evidence in their environment.
 
-Backbone operates at the **application platform layer**, not as an AWS landing zone. It intentionally avoids mandating a
-specific AWS Organizations layout or provisioning account- and organization-level security services — for example AWS
-Organizations security OUs, AWS Config, Security Hub, GuardDuty, or Shield Advanced. Those controls need org-wide
-delegated administration, account topology, and often already exist in an enterprise landing zone; Backbone cannot
-assume that shape without conflicting with operator foundations. Operators may run single-account sandboxes or
-multi-account landing zones. Both paths can satisfy control objectives when required org-level controls are implemented
-and evidenced in the operator environment. See [ADR-0027](/docs/0027-governance-evidence-architecture).
+Backbone operates at the **application platform layer**, not as an AWS landing zone. It intentionally avoids mandating a specific AWS Organizations layout or provisioning account- and organization-level security services — for example AWS Organizations security OUs, AWS Config, Security Hub, GuardDuty, or Shield Advanced. Those controls need org-wide delegated administration, account topology, and often already exist in an enterprise landing zone; Backbone cannot assume that shape without conflicting with operator foundations. Operators may run single-account sandboxes or multi-account landing zones. Both paths can satisfy control objectives when required org-level controls are implemented and evidenced in the operator environment. See [ADR-0027](/docs/0027-governance-evidence-architecture).
 
 ## Shared responsibility
 
