@@ -63,7 +63,7 @@ task test:unit
 task test:integration
 task test:integration MODULE=services/auth-service # run a specific module's integration tests
 task test:all                                      # run all unit and integration tests
-task test:static                                   # OWASP, PMD, SpotBugs, Checkstyle static code analysis
+task test:static                                   # PMD/SpotBugs/Checkstyle + OWASP (NVD); OSS Index: -- -Doss.index.analyzer.enabled=true
 
 mert start                                         # run all quarkus dev services locally
 

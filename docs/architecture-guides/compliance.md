@@ -90,7 +90,6 @@ account model.
 | ✅ | Restricted API origin (not open internet ALB)        | Defense in depth: edge WAF, network allowlisting, origin verification             | Integration testing through the CloudFront hostname |
 | ✅ | Internal service-to-service transport encryption     | Optional HTTPS on the internal ALB (ACM + private DNS);                           | mTLS/mesh if hop-to-task encryption is required     |
 | ✅ | Private connectivity to AWS APIs                     | VPC interface endpoints for secrets, identity, container registry, logging, email | Endpoint policy review                              |
-| ❌ | Advanced perimeter services (e.g. Shield Advanced)   | Intentionally remains a client decision                                           | Risk-based procurement and operation                |
 
 ### Data protection
 
@@ -136,14 +135,13 @@ account model.
 
 ### Change management and secure engineering
 
-|    | Capability                          | Platform provides                                                                | Operator still owns                             |
-|:--:|-------------------------------------|----------------------------------------------------------------------------------|-------------------------------------------------|
-| ✅ | Automated build and test on change  | CI pipeline on push and pull request                                             | Production promotion gates                      |
-| ✅ | Static analysis in CI               | Infrastructure and code quality checks                                           | Remediation SLAs and exception tracking         |
-| ✅ | Secret scanning in CI               | Repository secret detection in pipeline                                          | Broader supply-chain tooling as needed          |
-| ✅ | Infrastructure policy checks        | CDK Nag with documented suppressions                                             | Review of suppressions and drift detection      |
-| ✅ | Dependency update automation        | Renovate configuration in repository (scheduled PRs, grouped updates, automerge) | Dependabot, CodeQL, or equivalent org standards |
-| ✅ | Signed documentation mirror commits | GPG-signed commits on public doc sync                                            | Application release signing policy              |
+|    | Capability                            | Platform provides                                                                | Operator still owns                             |
+|:--:|---------------------------------------|----------------------------------------------------------------------------------|-------------------------------------------------|
+| ✅ | Automated build and test on change    | CI pipeline on push and pull request                                             | Production promotion gates                      |
+| ✅ | Static analysis in CI                 | Infrastructure and code quality checks                                           | Remediation SLAs and exception tracking         |
+| ✅ | Secret scanning on pre-push and in CI | Repository secret detection in development and in pipeline                       | Broader supply-chain tooling as needed          |
+| ✅ | Infrastructure policy checks          | CDK Nag with documented suppressions                                             | Review of suppressions and drift detection      |
+| ✅ | Dependency update automation          | Renovate configuration in repository (scheduled PRs, grouped updates, automerge) | Dependabot, CodeQL, or equivalent org standards |
 
 ### Data subject rights, retention, and communication
 

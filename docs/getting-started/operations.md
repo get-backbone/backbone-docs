@@ -67,8 +67,7 @@ Backbone-related secrets:
 
 External third-party secrets:
 - `NVD_API_KEY` - NVD API key for vulnerability scanning; see [NIST - Request an API Key](https://nvd.nist.gov/developers/request-an-api-key)
-- `OSS_INDEX_API_KEY` - OSS Index API key for dependency scanning; see [OSS Index - Auth Required](https://ossindex.sonatype.org/doc/auth-required)
-- `OSS_INDEX_USER` - OSS Index username
+- `OSS_INDEX_API_KEY` - Sonatype Guide / OSS Index API token for weekly CI dependency scanning only (local OWASP skips OSS Index by default); see [Sonatype Guide](https://guide.sonatype.com/) and [OSS Index analyzer](https://dependency-check.github.io/DependencyCheck/analyzers/oss-index-analyzer.html)
 - `CODECOV_TOKEN` - Codecov token for coverage reporting; see [Codecov](https://codecov.io/)
 
 Required for Login with Google (and OAuth refresh-token storage):

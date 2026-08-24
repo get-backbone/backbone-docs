@@ -163,14 +163,13 @@ task bootstrap:dotenvrc
 ```
 
 This script sets up, and you will be prompted for:
-- **API Keys**: NVD, OSS Index
+- **API Keys**: NVD (local OWASP); Sonatype Guide / OSS Index is CI-only
 - **Google OAuth** (required for Login with Google): client ID and secret from Google Cloud Console
 - **LinkedIn OAuth** [optional]: only when `linkedInOauthEnabled` is true in platform-config
 - **OAuth refresh encryption key**: generated if missing (`BACKBONE_OAUTH2_REFRESH_TOKEN_ENCRYPTION_KEY`)
 - **Quarkus SmallRye Config**: A secret for property encryption; generate using e.g. `openssl rand -base64 32`
 
 **References**:
-- OSS Index API key: <https://ossindex.sonatype.org/doc/auth-required>
 - NVD API key: <https://nvd.nist.gov/developers/request-an-api-key>
 - Google Cloud credentials: <https://console.cloud.google.com/apis/credentials>
 - LinkedIn Authentication [optional]: <https://learn.microsoft.com/en-gb/linkedin/shared/authentication/authentication>
@@ -266,7 +265,7 @@ task test:unit
 task test:integration
 task test:integration MODULE=services/auth-service # Run a specific module's integration tests
 task test:all                                      # Run all unit and integration tests
-task test:static                                   # OWASP, PMD, SpotBugs, Checkstyle static code analysis
+task test:static                                   # OWASP(NVD)/PMD/SpotBugs/Checkstyle; OSS Index in CI only
 ```
 
 ### Development Runtime
