@@ -8,7 +8,7 @@ summary: "Backbone is a production-oriented platform baseline for teams running 
 
 Backbone is a production-oriented platform baseline for teams running containerized services on AWS. This guide explains the security controls that are implemented today, the risks that are intentionally accepted, and the controls that remain the responsibility of each client team.
 
-This document is public and meant for architecture review, procurement review, and security review. User login and token lifecycle details live in [USER_AUTHENTICATION.md](/docs/user-authentication). Service identity and service-level authorization details live in [SERVICE_AUTHENTICATION.md](/docs/service-authentication).
+This document is public and meant for architecture review, procurement review, and security review. User login details are in [User authentication](/docs/user-authentication). Service identity is in [Service authentication](/docs/service-authentication).
 
 ## Scope and operating model
 
@@ -77,7 +77,7 @@ Current ingress posture is explicit and narrow:
 
 See [CloudFront origin protection (defense in depth)](#cloudfront-origin-protection-defense-in-depth) for how security-group rules combine with listener and edge controls.
 
-The current internal ALB path uses HTTP (`80`) by default (`internalHttps: false`). Identity and authorization remain enforced at the application layer through JWT validation and service authorization checks. HTTPS on the internal listener is enabled by setting `internalHttps: true` in `platform-config.yml` ([ADR-0024](/docs/0024-internal-alb-tls-east-west-optional)).
+The current internal ALB path uses HTTP (`80`) by default (`internalHttps: false`). Identity and authorization remain enforced at the application layer through JWT validation and service authorization checks. HTTPS on the internal listener is an Enterprise-tier opt-in via platform configuration.
 
 Baseline implication: confidentiality of internal service traffic is not guaranteed by default transport settings and should be hardened for environments with stricter compliance or threat requirements.
 
@@ -99,7 +99,7 @@ API traffic reaches the internet-facing ALB only as a **CloudFront HTTPS origin*
 
 The internet-facing ALB remains an internet-routable endpoint (required for CloudFront origin connectivity) but is not open to arbitrary internet sources at the security-group layer. Clients that bypass CloudFront IP ranges may still complete TLS to the listener; without valid CloudFront origin authentication they receive **403** and do not reach ECS target groups.
 
-Private ALB plus CloudFront VPC origins remains an optional hardening path for stricter threat models. See [ADR-0022](/docs/0022-public-alb-edge-and-origin-protection).
+Private ALB plus CloudFront VPC origins remains an optional hardening path for stricter threat models.
 
 ### WAF and edge controls
 
@@ -120,8 +120,6 @@ Production enforces CSP; non-production stages emit `Content-Security-Policy-Rep
 
 WAF at the edge is the first layer in the [origin protection model](#cloudfront-origin-protection-defense-in-depth); ALB listener and security-group controls apply on the regional origin path.
 
-See [ADR-0022](/docs/0022-public-alb-edge-and-origin-protection) for origin-hardening rationale and [ADR-0025](/docs/0025-static-ui-cloudfront-s3) for static UI delivery.
-
 ## Identity and access management posture
 
 ### User and service identity
@@ -138,7 +136,7 @@ The platform does not rely on a trusted internal network assumption for service 
 
 Cross-site request forgery (CSRF) is the browser attack where a hostile site causes the victim's browser to call your API using credentials the browser attaches automatically (typically session cookies).
 
-Backbone's baseline API auth uses **stateless JWTs** sent as `Authorization: Bearer` from JavaScript (`localStorage`), not HttpOnly session cookies ([ADR-0011](/docs/0011-stateless-jwt-authentication)).
+Backbone's baseline API auth uses **stateless JWTs** sent as `Authorization: Bearer` from JavaScript (`localStorage`), not HttpOnly session cookies.
 Classic cookie-based CSRF therefore does **not** apply to ordinary BFF and service API calls: a cross-origin page cannot read the token from `localStorage`, and the browser will not attach a Bearer header on its own.
 
 Residual risks and controls:
@@ -196,7 +194,7 @@ Encryption at rest posture in the baseline:
 - DynamoDB tables use DynamoDB-managed encryption at rest by default
 - RDS PostgreSQL instances use storage encryption with an AWS-managed KMS key
 - Secrets Manager data is encrypted at rest through AWS KMS-backed service behaviour
-- Infrastructure provisioning bootstrap allows either AWS-maanaged keys, platform-provisioned CMKs or external BYOK ARNs. See [ADR-0029](/docs/0029-customer-managed-kms-per-domain).
+- Infrastructure provisioning bootstrap allows AWS-managed keys, platform-provisioned CMKs, or external BYOK ARNs per domain.
 
 Encryption in transit posture in the baseline:
 
@@ -205,7 +203,7 @@ Encryption in transit posture in the baseline:
 - CloudFront emits **Strict-Transport-Security** plus `X-Content-Type-Options` and `Referrer-Policy` on static and API behaviors
 - CloudFront forwards API traffic to the internet-facing ALB over HTTPS
 - the internet-facing ALB forwards to ECS tasks over HTTP within the VPC (ALB TLS termination does not extend to target groups)
-- internal service-to-service traffic through the internal ALB uses HTTP by default (`internalHttps: false`) and can be switched to HTTPS on the ALB listener via `platform-config.yml` (see [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional))
+- internal service-to-service traffic through the internal ALB uses HTTP by default (`internalHttps: false`) and can be switched to HTTPS on the ALB listener (Enterprise tier)
 
 ## Runtime workload isolation and container privilege posture
 
@@ -264,7 +262,7 @@ Organization-level controls expected outside baseline platform constructs (or wh
 - ALB access logging to operator-owned buckets and lifecycle controls
 - SIEM integration, alerting, and incident response workflow
 
-Backbone provisions an optional **regional** CloudTrail trail, protected evidence storage with S3 Object Lock (COMPLIANCE) and stage-aware default retention, and ALB access logs into a companion SSE-S3 bucket. See [ADR-0027](/docs/0027-governance-evidence-architecture), [ADR-0028](/docs/0028-governance-evidence-object-lock), [Operations — Governance evidence](/docs/operations#4-governance-evidence-backbonegovernancestack), and [Observability architecture](/docs/observability).
+Backbone provisions an optional **regional** CloudTrail trail, protected evidence storage with S3 Object Lock (COMPLIANCE) and stage-aware default retention, and ALB access logs into a companion SSE-S3 bucket (Enterprise tier, when enabled).
 
 Platform logging supports operational observability. Audit-grade retention, aggregation, and cross-system correlation are delegated to client environment configuration.
 
@@ -278,7 +276,7 @@ Current deliberate boundaries include:
 2. The internet-facing ALB retains an internet-routable endpoint for CloudFront origin connectivity. Ingress uses defense in depth: CloudFront origin-facing IPv4 prefix list on the security group plus origin verification at the listener (see [CloudFront origin protection](#cloudfront-origin-protection-defense-in-depth)). Private ALB plus CloudFront VPC origins remains an optional hardening path for stricter threat models.
 3. Security hardening features that depend on client-specific policy or compliance context remain configurable rather than mandatory defaults.
 
-These boundaries are intentional design choices, not accidental gaps, and are documented through architecture decision records in [architecture/ADRs.md](/docs/adrs). The platform supports incremental adoption of stronger controls based on client maturity and threat model.
+These boundaries are intentional design choices, not accidental gaps. The platform supports incremental adoption of stronger controls based on client maturity and threat model.
 
 ### Explicit non-goals
 
@@ -301,13 +299,11 @@ Backbone provides a strong baseline. Client teams should still implement:
 
 ## Security maturity roadmap alignment
 
-Security posture evolves through ADR-driven changes. Remaining enhancements such as SIEM reference patterns are tracked on the roadmap.
-
-For the platform architecture context behind these decisions, review the ADR index in [architecture/ADRs.md](/docs/adrs).
+Security posture evolves through documented design decisions. Remaining enhancements such as SIEM reference patterns are tracked on the roadmap.
 
 ## Security control status matrix
 
-This matrix summarizes security-relevant platform controls and maturity state for architecture and procurement review. Enablement, defaults, and operator configuration live in [Operations](/docs/operations) and [Development](/docs/development) (including the platform-config bootstrap task), not in this guide.
+This matrix summarizes security-relevant platform controls and maturity state for architecture and procurement review. Tier constraints are in [Platform features](/docs/features#licence-tiers-and-platform-configuration).
 
 Status meaning:
 
@@ -315,26 +311,26 @@ Status meaning:
 - Extensible: hardening supported through code and infrastructure extension in the client-owned fork
 - Planned: baseline enhancement tracked on the roadmap
 
-| Control                                                    | Status      | Notes                                                                                                                                                               |
-|------------------------------------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Least-privilege IAM                                        | Implemented | Narrow action and resource scoping by default; bounded wildcards only where AWS APIs require them (see [IAM wildcard policy](#iam-wildcard-policy)).                |
-| OIDC-based CI and CD deployment identity                   | Implemented | Constrained GitHub Actions role assumption; no long-lived AWS keys for routine deploys.                                                                             |
-| Public edge protection (WAF and TLS)                       | Implemented | Viewer-facing WAF and TLS at the public edge entry point.                                                                                                           |
-| Content-Security-Policy at the edge                        | Implemented | CSP on static and API edge behaviors; report-only outside production, enforcing in production.                                                                      |
-| TLS-only viewers and HSTS at the edge                      | Implemented | HTTPS redirect, modern TLS floor, and browser hardening headers (HSTS, XCTO, Referrer-Policy).                                                                      |
-| Browser CORS allowlist                                     | Implemented | Explicit origins and headers for browser-facing APIs; no origin wildcards.                                                                                          |
-| CSRF posture                                               | Implemented | Bearer JWT for API auth (not session cookies); OAuth login uses one-time state binding. See [CSRF posture](#csrf-posture).                                          |
-| CloudFront origin verification and ALB ingress restriction | Implemented | Defense in depth at edge, network, and origin listener. See [CloudFront origin protection](#cloudfront-origin-protection-defense-in-depth).                         |
-| Static UI delivery with private origin access              | Implemented | Private encrypted object store; no public object access; served only through the edge distribution.                                                                 |
-| Internal service authentication and authorization          | Implemented | Application-layer JWT validation and service authorization on protected calls.                                                                                      |
-| Runtime isolation and non-root container baseline          | Implemented | Private-subnet container runtime with non-root execution baseline.                                                                                                  |
-| Edge access logging                                        | Implemented | Access logs for the public edge and related content stores.                                                                                                         |
-| Internal traffic encryption (HTTPS; mTLS optional)         | Implemented | Opt-in HTTPS on the internal service path; mTLS / mesh remain extensible. See [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).                           |
-| Customer-managed KMS key strategy                          | Implemented | Opt-in customer-managed keys (platform-provisioned or BYOK) with documented scope exceptions. See [ADR-0029](/docs/0029-customer-managed-kms-per-domain).           |
-| ALB access logging baseline                                | Implemented | Optional with platform governance evidence; omit when operators use org-wide evidence stores.                                                                       |
-| CloudTrail baseline                                        | Implemented | Optional regional trail (including global IAM/STS events); omit when a landing-zone org trail already covers the account.                                           |
-| Immutable CloudTrail evidence archive                      | Implemented | Object Lock COMPLIANCE archive with stage-aware retention; key management aligns with the CMK strategy. See [ADR-0028](/docs/0028-governance-evidence-object-lock). |
-| SIEM integration reference pattern                         | Documented  | Operator extension pattern in [Observability architecture](/docs/observability).                                                                                    |
+| Control                                                    | Status      | Notes                                                                                                                                                |
+|------------------------------------------------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Least-privilege IAM                                        | Implemented | Narrow action and resource scoping by default; bounded wildcards only where AWS APIs require them (see [IAM wildcard policy](#iam-wildcard-policy)). |
+| OIDC-based CI and CD deployment identity                   | Implemented | Constrained GitHub Actions role assumption; no long-lived AWS keys for routine deploys.                                                              |
+| Public edge protection (WAF and TLS)                       | Implemented | Viewer-facing WAF and TLS at the public edge entry point.                                                                                            |
+| Content-Security-Policy at the edge                        | Implemented | CSP on static and API edge behaviors; report-only outside production, enforcing in production.                                                       |
+| TLS-only viewers and HSTS at the edge                      | Implemented | HTTPS redirect, modern TLS floor, and browser hardening headers (HSTS, XCTO, Referrer-Policy).                                                       |
+| Browser CORS allowlist                                     | Implemented | Explicit origins and headers for browser-facing APIs; no origin wildcards.                                                                           |
+| CSRF posture                                               | Implemented | Bearer JWT for API auth (not session cookies); OAuth login uses one-time state binding. See [CSRF posture](#csrf-posture).                           |
+| CloudFront origin verification and ALB ingress restriction | Implemented | Defense in depth at edge, network, and origin listener. See [CloudFront origin protection](#cloudfront-origin-protection-defense-in-depth).          |
+| Static UI delivery with private origin access              | Implemented | Private encrypted object store; no public object access; served only through the edge distribution.                                                  |
+| Internal service authentication and authorization          | Implemented | Application-layer JWT validation and service authorization on protected calls.                                                                       |
+| Runtime isolation and non-root container baseline          | Implemented | Private-subnet container runtime with non-root execution baseline.                                                                                   |
+| Edge access logging                                        | Implemented | Access logs for the public edge and related content stores.                                                                                          |
+| Internal traffic encryption (HTTPS; mTLS optional)         | Implemented | Opt-in HTTPS on the internal service path; mTLS / mesh remain extensible.                                                                            |
+| Customer-managed KMS key strategy                          | Implemented | Opt-in customer-managed keys (platform-provisioned or BYOK) with documented scope exceptions.                                                        |
+| ALB access logging baseline                                | Implemented | Optional with platform governance evidence; omit when operators use org-wide evidence stores.                                                        |
+| CloudTrail baseline                                        | Implemented | Optional regional trail (including global IAM/STS events); omit when a landing-zone org trail already covers the account.                            |
+| Immutable CloudTrail evidence archive                      | Implemented | Object Lock COMPLIANCE archive with stage-aware retention; key management aligns with the CMK strategy.                                              |
+| SIEM integration reference pattern                         | Documented  | Operator extension; not part of the product baseline.                                                                                                |
 
 ## IAM wildcard policy
 
@@ -368,6 +364,18 @@ Each case should include an inline rationale and corresponding cdk-nag suppressi
 ## Further reading
 
 - [Architecture decision records](/docs/adrs)
+- [Observability architecture](/docs/observability) — governance evidence and operator extensions
+- [Operations](/docs/operations) — deployment defaults and platform configuration
+- [Development](/docs/development) — platform configuration bootstrap
+- [Runbook §9: Enable internal ALB HTTPS](/docs/runbook#9-enable-internal-alb-https)
+- [Platform features — licence tiers](/docs/features#licence-tiers-and-platform-configuration)
+- [ADR-0022: Public ALB edge and origin protection](/docs/0022-public-alb-edge-and-origin-protection)
+- [ADR-0024: Internal ALB TLS (east-west, optional)](/docs/0024-internal-alb-tls-east-west-optional)
+- [ADR-0025: Static UI CloudFront S3](/docs/0025-static-ui-cloudfront-s3)
+- [ADR-0027: Governance evidence architecture](/docs/0027-governance-evidence-architecture)
+- [ADR-0028: Governance evidence Object Lock](/docs/0028-governance-evidence-object-lock)
+- [ADR-0029: Customer-managed KMS per domain](/docs/0029-customer-managed-kms-per-domain)
+- [ADR-0011: Stateless JWT authentication](/docs/0011-stateless-jwt-authentication)
 - [AWS Well-Architected Framework — Security pillar](https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html) — AWS Documentation
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/) — OWASP Foundation
 - [OWASP API Security Top 10](https://owasp.org/API-Security/) — OWASP Foundation

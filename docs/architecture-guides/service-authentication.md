@@ -7,7 +7,7 @@ Every backend service runs with its own **service identity**. When one service c
 
 Receiving services validate tokens on every call and can restrict sensitive operations to named callers.
 
-This guide is for architecture review, procurement, and security diligence. See [ADR-0011](/docs/0011-stateless-jwt-authentication) and [ADR-0005](/docs/0005-implement-service-auth-sts-assumerolewithwebidentity) for technical records.
+This guide is for architecture review, procurement, and security diligence.
 
 ## What problem this solves
 
@@ -56,7 +56,7 @@ Bootstrap endpoints (login, registration, token refresh) do not forward identity
 2. **Least privilege** — Caller allowlists name the only services permitted for sensitive operations.
 3. **Assume breach** — Stolen user credentials alone cannot satisfy service-only endpoints; service credentials are a separate trust domain.
 
-Transport between services today uses HTTP on the internal load balancer by default (`internalHttps: false`), with **application-layer JWT validation**. Opt-in internal HTTPS is documented in [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
+Transport between services uses HTTP on the internal load balancer by default, with **application-layer JWT validation**. Optional internal HTTPS is an Enterprise-tier platform configuration option.
 
 ## Relationship to user authentication
 
@@ -79,5 +79,7 @@ These are **separate trust domains**. See [User authentication](/docs/user-authe
 ## Further reading
 
 - [User authentication](/docs/user-authentication) — human identity (separate trust domain)
+- [ADR-0011: Stateless JWT authentication](/docs/0011-stateless-jwt-authentication)
 - [ADR-0005: Service auth with STS AssumeRoleWithWebIdentity](/docs/0005-implement-service-auth-sts-assumerolewithwebidentity)
+- [ADR-0024: Internal ALB TLS (east-west, optional)](/docs/0024-internal-alb-tls-east-west-optional)
 - [IAM OIDC federation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc.html) — AWS Documentation

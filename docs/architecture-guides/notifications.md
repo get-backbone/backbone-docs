@@ -7,7 +7,7 @@ Applications need reliable **transactional notifications** — welcome email, pa
 
 Backbone provides a **centralized notification service** that accepts send requests, queues work, renders templates, delivers via AWS SES, and tracks outcomes.
 
-This guide is for architecture review, procurement, and product diligence. Detailed ADRs cover templates, rate limiting, and unsubscribe security.
+This guide is for architecture review, procurement, and product diligence.
 
 ## What problem this solves
 
@@ -17,7 +17,7 @@ Without a shared notification layer:
 2. **Callers block on delivery** — slow or failing email providers delay user-facing API responses.
 3. **Bounces and complaints are invisible** — reputation and compliance suffer.
 
-Backbone follows a **fire-and-forget** model: callers receive immediate acceptance with a notification ID; delivery happens asynchronously. See [ADR-0015](/docs/0015-notification-service-fire-and-forget-pattern).
+Backbone follows a **fire-and-forget** model: callers receive immediate acceptance with a notification ID; delivery happens asynchronously.
 
 ## Architectural overview
 
@@ -46,14 +46,14 @@ Callers **do not wait** for SES delivery. They receive confirmation that the not
 
 ## Capabilities
 
-| Capability                  | Description                                                                                                                                                   |
-|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Transactional email**     | Welcome and password-reset flows today; extensible template model                                                                                             |
-| **Template engine**         | Versioned templates with variable substitution                                                                                                                |
-| **Priority queues**         | Critical messages can be prioritized over bulk traffic                                                                                                        |
-| **Delivery tracking**       | Status transitions: queued → sent → delivered / bounced / complaint                                                                                           |
-| **Unsubscribe tokens**      | Secure, single-use tokens for marketing/compliance opt-out paths                                                                                              |
-| **Provider rate awareness** | Per-provider throttling so SES limits are respected (distinct from HTTP rate limits — see [ADR-0016](/docs/0016-notification-service-rate-limiting-strategy)) |
+| Capability                  | Description                                                                                      |
+|-----------------------------|--------------------------------------------------------------------------------------------------|
+| **Transactional email**     | Welcome and password-reset flows today; extensible template model                                |
+| **Template engine**         | Versioned templates with variable substitution                                                   |
+| **Priority queues**         | Critical messages can be prioritized over bulk traffic                                           |
+| **Delivery tracking**       | Status transitions: queued → sent → delivered / bounced / complaint                              |
+| **Unsubscribe tokens**      | Secure, single-use tokens for marketing/compliance opt-out paths                                 |
+| **Provider rate awareness** | Per-provider throttling so SES limits are respected (distinct from HTTP rate limits at the edge) |
 
 ## Delivery lifecycle and webhooks
 
@@ -67,9 +67,9 @@ This gives operators visibility into **deliverability** without polling provider
 
 ## Security and compliance
 
-- **Service-to-service auth** — Only authorized platform services may trigger notifications; see [Service authentication](/docs/service-authentication).
-- **Unsubscribe integrity** — Tokens are short-lived and single-use where applicable; see [ADR-0019](/docs/0019-notification-service-unsubscribe-token-security).
-- **Audit trail** — Send actions can emit audit events; see [Audit logging](/docs/audit).
+- **Service-to-service auth** — Only authorized platform services may trigger notifications.
+- **Unsubscribe integrity** — Tokens are short-lived and single-use where applicable.
+- **Audit trail** — Send actions can emit audit events.
 - **Operator responsibilities** — SES domain verification, DKIM/SPF, bounce handling policies, and marketing consent rules remain with the deploying organization.
 
 ## Operator expectations
@@ -83,6 +83,9 @@ This gives operators visibility into **deliverability** without polling provider
 
 ## Further reading
 
+- [Service authentication](/docs/service-authentication) — service-to-service auth for notification triggers
+- [Audit logging](/docs/audit) — audit events for send actions
 - [ADR-0015: Fire-and-forget pattern](/docs/0015-notification-service-fire-and-forget-pattern)
 - [ADR-0016: Provider rate limiting](/docs/0016-notification-service-rate-limiting-strategy)
+- [ADR-0019: Notification unsubscribe token security](/docs/0019-notification-service-unsubscribe-token-security)
 - [Amazon SES best practices](https://docs.aws.amazon.com/ses/latest/dg/best-practices.html) — AWS Documentation

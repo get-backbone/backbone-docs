@@ -12,6 +12,7 @@ summary: "Operational procedures for Backbone infrastructure and delivery."
 - [5) Scaffold a new domain service](#5-scaffold-a-new-domain-service)
 - [6) Query private Postgres (CloudShell VPC)](#6-query-private-postgres-cloudshell-vpc)
 - [7) Password reset against Floci (local)](#7-password-reset-against-floci-local)
+- [8) AMG post-deploy checklist](#8-amg-post-deploy-checklist)
 
 ---
 
@@ -130,3 +131,28 @@ curl -s http://localhost:4566/_aws/ses
 ```
 
 Use the `reset-password.html?token=…` URL from the message body (text or HTML). Clear captured mail with `curl -X DELETE http://localhost:4566/_aws/ses` if the list gets noisy.
+
+---
+
+## 8) AMG post-deploy checklist
+
+After `task aws:deploy-observability` and `task aws:grant-observability`, complete datasource setup once per workspace. **Re-run after every ObservabilityStack recreate** (hibernate/redeploy creates a new workspace ID).
+
+CDK provisions three Grafana datasources (Prometheus → AMP, CloudWatch, X-Ray) and enables **plugin administration** on the workspace. Listing `XRAY` on the workspace does **not** install the Grafana plugin binary — an admin must install it once from the catalog.
+
+1. In AMG: **Administration → Plugins → All**.
+2. Install **Application Signals** (plugin id `grafana-x-ray-datasource`; formerly labeled AWS X-Ray). See [AWS Application Signals data source](https://grafana.com/docs/plugins/grafana-x-ray-datasource/latest/).
+3. Wait one to two minutes for the install to sync.
+4. **Connections → Data sources** → open each of **Prometheus**, **CloudWatch**, and **X-Ray** → **Save & test**.
+
+| Datasource | Expected Save & test                                  |
+|------------|-------------------------------------------------------|
+| Prometheus | Success (queries AMP)                                 |
+| CloudWatch | Metrics and Logs both succeed                         |
+| X-Ray      | Success after Application Signals plugin is installed |
+
+If CloudWatch reports metrics OK but Logs `AccessDeniedException` on `logs:DescribeLogGroups`, redeploy ObservabilityStack with the current Backbone IAM policy. If X-Ray says **Plugin not found**, the catalog install was skipped or has not finished syncing.
+
+Identity Center `AdministratorAccess` on the AWS account is **not** the same as AMG workspace Admin; use `task aws:grant-observability` for Grafana access.
+
+---

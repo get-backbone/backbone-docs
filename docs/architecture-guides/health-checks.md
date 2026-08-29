@@ -62,14 +62,16 @@ This matches the security posture described in [Application caching and distribu
 
 ## Operator expectations
 
-| Topic                  | Expectation                                                                                                                                                                                                   |
-|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Deploys**            | New tasks must pass readiness before old tasks drain; failed readiness blocks rollout progress                                                                                                                |
-| **Dependency outages** | A datastore or Cognito incident removes affected tasks from rotation rather than serving errors                                                                                                               |
-| **Monitoring**         | Alert on sustained unhealthy target counts in the load balancer — see [Infrastructure monitoring](/docs/monitoring); application signals in [Application telemetry](/docs/application-telemetry) |
-| **Local dev**          | Health endpoints are available in Quarkus dev mode; dependency checks reflect local or test doubles                                                                                                           |
+| Topic                  | Expectation                                                                                         |
+|------------------------|-----------------------------------------------------------------------------------------------------|
+| **Deploys**            | New tasks must pass readiness before old tasks drain; failed readiness blocks rollout progress      |
+| **Dependency outages** | A datastore or Cognito incident removes affected tasks from rotation rather than serving errors     |
+| **Monitoring**         | Alert on sustained unhealthy target counts in the load balancer                                     |
+| **Local dev**          | Health endpoints are available in Quarkus dev mode; dependency checks reflect local or test doubles |
 
 ## Further reading
 
 - [Observability architecture](/docs/observability) — readiness is one signal among several operational concerns
+- [Infrastructure monitoring](/docs/monitoring) — alert on sustained unhealthy target counts
+- [Application telemetry](/docs/application-telemetry) — application health signals beyond load-balancer probes
 - [Determine Amazon ECS task health using container health checks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/healthcheck.html) — AWS Documentation

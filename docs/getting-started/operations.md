@@ -18,7 +18,6 @@ For step-by-step operational runbook procedures (for example ECS native vs JVM, 
   - [Development Environment `backbone-sandbox` profile](#1-development-environment-backbone-sandbox-profile)
   - [Domain DNS configuration](#2-domain-dns-configuration)
   - [Managed observability](#3-managed-observability)
-  - [Governance evidence (BackboneGovernanceStack)](#4-governance-evidence-backbonegovernancestack)
 - [CDK and AWS](#cdk-and-aws)
 - [CDK and Floci](#cdk-and-floci)
 - [Local metrics](#local-metrics)
@@ -53,6 +52,7 @@ The INT role includes ECR push to the central registry. STAGE/PROD roles can for
 - `PROD_AWS_ACCOUNT_ID` - AWS account ID for the PROD stage
 - `BACKBONE_ECS_RUNTIME_MODE` (optional) - `jvm` (faster image build; slower container startup) or `native` (long builds; smaller images; better cold start).
 - `USER_BACKBONE_DEPLOY` - GitHub username for the account that owns `secrets.PAT_BACKBONE_DEPLOY` (workflows pass it as `GITHUB_MAVEN_USERNAME` to `configure-maven-github.sh`)
+- `BACKBONE_LICENCE_TIER` - `foundation`, `growth`, or `enterprise`. Must match the tier in your signed licence. CDK synth uses this for entitlement checks.
 
 Workflows select the target account from those vars (e.g. INT for ECR push; INT/STAGE/PROD from a `stage_env` choice). CDK reads the same names from the job environment for central ECR ARNs and the pull allow-list.
 
@@ -60,7 +60,7 @@ Workflows select the target account from those vars (e.g. INT for ECR push; INT/
 
 Backbone-related secrets:
 - `PAT_BACKBONE_DEPLOY` - GitHub token for deployment
-- `BACKBONE_LICENCE` - Backbone licence key for runtime deployment
+- `BACKBONE_LICENCE` - Contents of the signed client licence file (received from the vendor; not generated in this repo). Required at CDK synth to populate the Secrets Manager secret consumed by ECS tasks.
 - `SMALLRYE_CONFIG_SECRET_KEY` (base64 encoded) - Encryption key for secrets.properties
 - `GPG_PRIVATE_KEY` - GPG private key for signing artifacts during releases; see [03-release-bump.yml](https://github.com/get-backbone/backbone-platform/blob/main/.github/workflows/03-release-bump.yml)
 - `GPG_PASSPHRASE` - GPG passphrase for signing artifacts during releases
@@ -87,7 +87,7 @@ Because AWS environments vary widely across clients — especially in enterprise
 
 For greenfield teams or startups without established AWS conventions, it is recommended to bootstrap your AWS environments using [Superwerker](https://github.com/superwerker/superwerker), developed by AWS Advanced Partners. Superwerker provides a well-architected baseline with sensible defaults around multi-account structure, security boundaries, and blast radius management.
 
-Backbone does not subscribe to or replace an AWS landing zone model. Every client account layout differs. When you already operate a landing zone (Superwerker, Control Tower, or a custom security OU with a central log archive), map Backbone into that foundation rather than reshaping the organization around Backbone — see [Governance evidence](#4-governance-evidence-backbonegovernancestack) below.
+Backbone does not subscribe to or replace an AWS landing zone model. Every client account layout differs. When you already operate a landing zone (Superwerker, Control Tower, or a custom security OU with a central log archive), map Backbone into that foundation rather than reshaping the organization around Backbone.
 
 Backbone local development uses Floci (Docker) on `:4566` for AWS APIs including Cognito.
 Deploy Cognito and Domain DNS into real AWS only for INT/DEV/PROD (or when you need live Cognito outside Floci);
@@ -134,7 +134,7 @@ When DomainStack deployment succeeds, you should receive a notification 'DKIM se
 
 ### 3. Managed observability
 
-Skip when `observabilityEnabled: false` for a stage in `platform-config.yml` (default `true`). When enabled, CDK deploys `ObservabilityStack` (AMP + AMG). Identity Center is only required for Grafana sign-in, not for CDK or other Backbone stacks.
+Skip when managed observability is disabled for that environment. When enabled, CDK deploys `ObservabilityStack` (AMP + AMG). Identity Center is only required for Grafana sign-in, not for CDK or other Backbone stacks.
 
 #### Identity Center
 
@@ -181,86 +181,7 @@ Optional: `BACKBONE_STAGE_ENV` (default `INT`), `AMG_ROLE` (`ADMIN` | `EDITOR` |
 
 Open the workspace URL (`Backbone-OBSERVABILITY-AMG-WORKSPACE-URL`) → **Sign in with AWS IAM Identity Center** (Identity Center password, not `backbone-sandbox` access keys).
 
-#### Datasources and X-Ray plugin
-
-CDK provisions three Grafana datasources (Prometheus → AMP, CloudWatch, X-Ray) and enables **plugin administration** on the workspace (`pluginAdminEnabled`). With `CUSTOMER_MANAGED` permissions, listing `XRAY` on the workspace does **not** install the Grafana plugin binary — an admin must install it once per workspace from the catalog.
-
-1. In AMG: **Administration → Plugins → All**.
-2. Install **Application Signals** (plugin id `grafana-x-ray-datasource`; formerly labeled AWS X-Ray). See [AWS Application Signals data source](https://grafana.com/docs/plugins/grafana-x-ray-datasource/latest/).
-3. Wait one to two minutes for the install to sync.
-4. **Connections → Data sources** → open each of **Prometheus**, **CloudWatch**, and **X-Ray** → **Save & test**.
-
-Expected results after ObservabilityStack is current:
-
-| Datasource | Save & test                                                                           |
-|------------|---------------------------------------------------------------------------------------|
-| Prometheus | Success (queries AMP)                                                                 |
-| CloudWatch | Metrics and Logs both succeed (workspace role includes CloudWatch Logs Insights APIs) |
-| X-Ray      | Success after the Application Signals plugin is installed                             |
-
-If CloudWatch reports metrics OK but Logs `AccessDeniedException` on `logs:DescribeLogGroups`, the workspace role is missing Logs permissions — redeploy ObservabilityStack with the current Backbone IAM policy. If X-Ray says **Plugin not found**, the catalog install above was skipped or has not finished syncing.
-
-Identity Center `AdministratorAccess` on the AWS account is **not** the same as AMG workspace Admin; use `task aws:grant-observability` for Grafana access.
-
-See [Observability architecture](/docs/observability) and [ADR-0026](/docs/0026-observability-backend-strategy).
-
-### 4. Governance evidence (BackboneGovernanceStack)
-
-**Optional** - enabled by default via `governanceEvidenceEnabled: true` in `config/src/main/resources/platform-config.yml`.
-
-When `true`, CDK deploys `GovernanceStack`: a KMS-encrypted CloudTrail evidence bucket, an SSE-S3 companion bucket for ALB access logs, a **regional** CloudTrail trail (with global IAM/STS events), and ALB access logging.
-
-Set `governanceEvidenceEnabled: false` per environment when your organization already operates account- or org-wide CloudTrail and centralized log archives (for example a Superwerker log-archive account), or when the stage should stay lean for integration testing. In that case Backbone skips `GovernanceStack` and does not enable ALB access logs; you re-point edge and API logging to your existing evidence stores and investigation runbooks.
-
-**What Backbone records (when enabled)**
-
-| Source          | Scope                                                                                                                                                        |
-|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| CloudTrail      | Management events in the **deployment region** plus **global service events** (IAM, STS). Not multi-region - Backbone deploys single-region per environment. |
-| ALB access logs | HTTP traffic to Backbone public and internal ALBs only.                                                                                                      |
-
-**Important account boundary:** CloudTrail is an **account-level** service. It cannot be limited to "Backbone stacks only." Any other API activity in the **same region** in that AWS account is also recorded. Backbone evidence is therefore a best fit when:
-
-- Backbone runs in a **dedicated workload account** (recommended greenfield pattern, including a single-purpose sandbox), or
-- You accept shared-account noise from co-located workloads in that region.
-
-Enterprise landing zones that already centralize control-plane evidence should **disable** Backbone governance (`governanceEvidenceEnabled: false`) and use the org trail / log archive instead of maintaining a second trail.
-
-**Example overrides:**
-
-```yaml
-environments:
-  # INT — lean integration stage (committed baseline override)
-  INT:
-    observabilityEnabled: false
-    governanceEvidenceEnabled: false
-```
-
-### Internal ALB HTTPS (`internalHttps`)
-
-Default is `internalHttps: false` (HTTP:80 on the private ALB, raw ELB DNS in `BACKBONE_INTERNAL_ALB_URL`). Set `internalHttps: true` on baseline or a per-env override to enable listener HTTPS:443 with a public ACM certificate for `api.{env}.{domainRoot}`, a private hosted zone for VPC-only resolution, and `https://api.{env}.{domainRoot}` for service REST clients.
-
-Flipping the flag is **disruptive**: redeploy Domain, Security, and Runtime together so certificate, security-group port, listener, private DNS, and task env URLs stay aligned. Target groups remain HTTP to Fargate (listener-only TLS). See [ADR-0024](/docs/0024-internal-alb-tls-east-west-optional).
-
-### Customer-managed KMS (`customerManagedKms`)
-
-Default is `customerManagedKms: false` (AWS-managed encryption at rest). Set before first deploy:
-
-```yaml
-baseline:
-  customerManagedKms: true   # provision one CMK per domain
-```
-
-Or BYOK (optional ARNs; omitted domains are provisioned)
-
-```yaml
-baseline:
-  customerManagedKms:
-    datastoreCmkArn: arn:aws:kms:eu-west-1:123456789012:key/...
-    secretsCmkArn: arn:aws:kms:eu-west-1:123456789012:key/...
-```
-
-Greenfield only - no migration for existing encrypted resources. Documented exceptions (SSE-S3 log-delivery sinks; AWS-managed CloudWatch/flow logs, AMP/AMG, Cognito) are in [ADR-0029](/docs/0029-customer-managed-kms-per-domain).
+After first deploy, complete the AMG datasource and X-Ray plugin checklist in [Runbook §8](/docs/runbook#8-amg-post-deploy-checklist).
 
 ---
 

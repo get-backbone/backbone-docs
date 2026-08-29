@@ -5,11 +5,7 @@ summary: "A comprehensive guide for setting up and working with the Backbone pla
 
 A comprehensive guide for setting up and working with the Backbone platform.
 
-For GitHub and AWS setup, CDK against Floci (local) or AWS (upstream environments), and local Prometheus and Grafana, see [OPERATIONS.md](/docs/operations).
-
-For a compact task index, see [CHEATSHEET.md](/docs/cheatsheet).
-
-For **verified** platform capabilities see [FEATURES.md](/docs/features); for how-to guides see [Welcome - Start here](/docs/welcome#start-here). For the ADR index see [ADRs.md](/docs/adrs).
+For GitHub and AWS setup, CDK, and local metrics, see [Operations](/docs/operations). For a task index, see [Cheatsheet](/docs/cheatsheet).
 
 ## Table of Contents
 
@@ -129,26 +125,38 @@ Secure both the client host backbone group/user and the licence file and directo
 task bootstrap:licence-secure
 ```
 
-Add each user who will run the app to the backbone group, then have them **log out and back in** (a new terminal is not enough on macOS). See the message printed by the script for the exact commands.
+Add each user who will run the app to the backbone group:
+
+```bash
+# macOS
+sudo dscl . -append /Groups/backbone GroupMembership $(whoami)
+
+# Linux
+sudo usermod -aG backbone $(whoami)
+```
+
+Then have them **log out and back in** (a new terminal is not enough on macOS).  
+You can verify your installed licence file with:
+
+```bash
+task bootstrap:licence-verify
+```
 
 After that, running the app as that user is enough; the process can read the licence via group membership.
 
-### 5. Client platform configuration
+### 5. Client platform infrastructure configuration
 
-To override any default platform configuration values in `config/src/main/resources/platform-config.yml` run:
+Before deploying any CDK infrastructure, configure Backbone platform defaults for your organisation and licence tier.
+The wizard only prompts for options allowed on that tier (Foundation never offers BYOK CMKs, HA endpoints, etc.).
+Allowed values per tier are in [Platform features](/docs/features#licence-tiers-and-platform-configuration).
+
+To create or update platform configuration run:
 
 ```bash
 task bootstrap:platform-config
 ```
 
-This script sets up overall:
-- **Root domain**: You must set this to your own domain name where you control the DNS.
-
-And baseline values for:
-- **NAT Gateway enabled**: Set to false everywhere for cost optimization (backbone uses VPC endpoints internally); you only need this enabled if your platform architecture dictates outbound internet access.
-- **ECS desired task count**: Set to 1 for cost optimization.
-
-You can override these values on a per-environment basis. By convention, backbone treats DEV/INT as non-production environments and STAGE/PROD as production-like environments.
+You can override values on a per-environment basis. By convention, backbone treats DEV/INT as non-production environments and STAGE/PROD as production-like environments.
 
 ### 6. Development environment variables (.envrc.local)
 

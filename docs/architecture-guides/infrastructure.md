@@ -73,7 +73,7 @@ See [Application caching and distributed scale](/docs/caching) and [Rate limitin
 - **Public edge:** CloudFront with WAF (hostname allowlist, rate limits, geo controls).
 - **Origin protection:** CloudFront-to-ALB verification header; ALB security groups restrict source to CloudFront edge ranges.
 - **Internal traffic:** Service-to-service calls use an internal load balancer; JWT validation at the application layer (not network trust alone).
-- **Optional internal TLS:** Opt-in via `internalHttps` in `platform-config.yml` ([ADR-0024](/docs/0024-internal-alb-tls-east-west-optional)).
+- **Optional internal TLS:** Enterprise-tier opt-in via platform configuration.
 
 Full edge and IAM posture: [Platform security posture](/docs/security).
 
@@ -114,5 +114,6 @@ Backbone supports progressive hardening without redesigning application services
 ## Further reading
 
 - [ADR-0022: Public ALB edge and origin protection](/docs/0022-public-alb-edge-and-origin-protection)
-- [Runbook](/docs/runbook) — JVM/native runtime and operational procedures
+- [ADR-0024: Internal ALB TLS (east-west, optional)](/docs/0024-internal-alb-tls-east-west-optional)
+- [Runbook §9: Enable internal ALB HTTPS](/docs/runbook#9-enable-internal-alb-https)
 - [Amazon ECS best practices guide](https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/intro.html) — AWS Documentation

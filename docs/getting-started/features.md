@@ -17,7 +17,7 @@ summary: "Discrete inventory of Backbone platform capabilities across identity, 
 - edge protection (CloudFront + WAF: host allowlist, geo, rate rules)
 - origin protection (ALB locked to CloudFront + verify secret)
 - private ECS networking / VPC per environment
-- optional internal ALB TLS (east-west)
+- optional internal ALB TLS (east-west; Enterprise tier)
 - DNSSEC on Route53 hosted zones
 - CSP / XSS posture for browser token storage
 
@@ -38,7 +38,8 @@ summary: "Discrete inventory of Backbone platform capabilities across identity, 
 - structured / correlated logging (MDC, `X-Correlation-Id`)
 - PII / sensitive-data log masking
 - CloudWatch + SNS infrastructure monitoring / alerting
-- governance evidence hooks (edge/ALB access logs when enabled)
+- optional managed observability (AMP + AMG + X-Ray export; Growth and Enterprise when enabled)
+- optional governance evidence (CloudTrail + protected evidence + ALB access logs; Enterprise when enabled)
 
 ## Domain services
 
@@ -79,9 +80,32 @@ summary: "Discrete inventory of Backbone platform capabilities across identity, 
 - audit trails
 - compliance control mapping (SOC 2 / GDPR / HIPAA-aligned objectives; operator-owned certification)
 - compliance roadmap / shared-responsibility model
-- governance evidence architecture
+- optional governance evidence (Enterprise): regional CloudTrail, protected evidence storage, and ALB access logs for control-plane and edge attribution — disable when your organization already operates org-wide trails and log archives
 - least-privilege IAM posture documentation
-- [Architecture Decision Records (ADRs)](/docs/adrs)
+
+---
+
+## Licence tiers and platform configuration
+
+Your signed licence tier (`foundation`, `growth`, or `enterprise`) determines which platform configuration options the bootstrap wizard offers.  
+The wizard applies settings **per environment** (`DEV`, `INT`, `STAGE`, `PROD`).  
+This allows use of leaner options on integration stages and fuller posture on production-like stages so FinOps stays predictable.  
+
+| Configuration               | Foundation        | Growth            | Enterprise        |
+|-----------------------------|-------------------|-------------------|-------------------|
+| `vpcAzCount`                | max 2             | max 2             | unrestricted      |
+| `endpointAzMode`            | `minimal`         | `minimal`         | `minimal` \| `ha` |
+| `natEnabled`                | `true` \| `false` | `true` \| `false` | `true` \| `false` |
+| `ecsDesiredCount`           | 1–2               | 1–3               | min 1, no max     |
+| `internalHttps`             | `false`           | `false`           | `true` \| `false` |
+| `customerManagedKms`        | AMK               | AMK, CMK          | AMK, CMK, BYOK    |
+| `observabilityEnabled`      | `false`           | `true` \| `false` | `true` \| `false` |
+| `governanceEvidenceEnabled` | `false`           | `false`           | `true` \| `false` |
+
+**Managed observability** (`observabilityEnabled`) gates the AMP/AMG stack and application export to Prometheus remote write and X-Ray.  
+**Infrastructure monitoring** (CloudWatch dashboards and alarms to SNS) and **application logs** in CloudWatch Logs ship on every tier regardless.  
+Similarly, addition of a **NAT Gateway** for outbound internet access is a configurable option for all tiers (with cost-saving implications).  
+Encryption at rest defaults to AWS-managed keys (AMK). Growth adds Backbone-provisioned CMKs (CMK); Enterprise adds bring-your-own-key (BYOK) per domain.
 
 ## Developer experience
 
@@ -96,13 +120,13 @@ summary: "Discrete inventory of Backbone platform capabilities across identity, 
 
 Open-source libraries for observability, throttling, health, and small cross-cutting APIs - so product repos stay about domain, not plumbing:
 
-| Module | What it brings |
-|--------|----------------|
-| [backbone-metrics](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-metrics) / [backbone-metrics-api](https://github.com/get-backbone/backbone-kit/tree/main/backbone-api/backbone-metrics-api) | Declarative application metrics (operations, DB, resilience, throttles) |
-| [backbone-health-aws](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-health-aws) | Readiness for AWS-shaped dependencies (Postgres, DynamoDB, S3, Cognito) |
-| [backbone-http-aws](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-http-aws) | SigV4-signed HTTP transport (AMP, X-Ray OTLP, other AWS endpoints) |
+| Module                                                                                                                                                                                                                                                       | What it brings                                                                   |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| [backbone-metrics](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-metrics) / [backbone-metrics-api](https://github.com/get-backbone/backbone-kit/tree/main/backbone-api/backbone-metrics-api)                                 | Declarative application metrics (operations, DB, resilience, throttles)          |
+| [backbone-health-aws](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-health-aws)                                                                                                                                              | Readiness for AWS-shaped dependencies (Postgres, DynamoDB, S3, Cognito)          |
+| [backbone-http-aws](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-http-aws)                                                                                                                                                  | SigV4-signed HTTP transport (AMP, X-Ray OTLP, other AWS endpoints)               |
 | [backbone-observability-api](https://github.com/get-backbone/backbone-kit/tree/main/backbone-api/backbone-observability-api) / [backbone-observability-aws](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-observability-aws) | AMP metrics push (Prometheus remote write) and X-Ray trace export (OTLP + SigV4) |
-| [backbone-throttle](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-throttle) | Rate limiting primitives and metrics-friendly integration |
-| [backbone-security](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-security) | Reusable JWT building blocks (Cognito claims extractors ordered in Backbone) |
-| [backbone-logging](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-logging) | Method-entry logging, correlation IDs, PII / sensitive-data masking |
-| [backbone-common](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-common) | Shared REST, validation, and error-handling utilities |
+| [backbone-throttle](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-throttle)                                                                                                                                                  | Rate limiting primitives and metrics-friendly integration                        |
+| [backbone-security](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-security)                                                                                                                                                  | Reusable JWT building blocks (Cognito claims extractors ordered in Backbone)     |
+| [backbone-logging](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-logging)                                                                                                                                                    | Method-entry logging, correlation IDs, PII / sensitive-data masking              |
+| [backbone-common](https://github.com/get-backbone/backbone-kit/tree/main/backbone-impl/backbone-common)                                                                                                                                                      | Shared REST, validation, and error-handling utilities                            |

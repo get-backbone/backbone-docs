@@ -76,7 +76,7 @@ Audit logging supports common diligence questions:
 - Is there a **central store** queryable for investigations?
 - Can you **fan out** audit events to SIEM without rewriting emitters?
 
-Backbone provides the **technical baseline**; retention policies, access controls on audit data, legal hold, and additional EventBridge targets remain **operator responsibilities**. See [Compliance](/docs/compliance) for control mapping.
+Backbone provides the **technical baseline**; retention policies, access controls on audit data, legal hold, and additional EventBridge targets remain **operator responsibilities**.
 
 ## Operator expectations
 
@@ -87,6 +87,7 @@ Backbone provides the **technical baseline**; retention policies, access control
 
 ## Further reading
 
+- [Compliance](/docs/compliance) — control mapping and shared responsibility
 - [Observability architecture](/docs/observability) — how application audit differs from CloudTrail and operational telemetry
 - [Security best practices for AWS CloudTrail](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/best-practices-security.html) — AWS Documentation
 - [AWS centralized audit alerting](https://awsfundamentals.com/blog/build-centralized-alerting-across-your-organization-with-cloudwatch-eventbridge-lambda-and-cdk) — AWS Fundamentals

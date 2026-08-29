@@ -5,7 +5,7 @@ summary: "How Backbone monitors infrastructure health with per-stack CloudWatch 
 
 Backbone provides baseline **infrastructure monitoring** for every deployed platform stack using CloudWatch dashboards, CloudWatch alarms, and a central SNS alerts topic. This answers a different operational question than application observability: **is the platform itself healthy?**
 
-This guide is for architecture review, procurement, and technical diligence. It explains how Backbone thinks about infrastructure monitoring — not how to deploy alarms or wire on-call routing. The four-concern operational model is in [Observability architecture](/docs/observability); application telemetry depth is in [Application telemetry](/docs/application-telemetry).
+This guide is for architecture review, procurement, and technical diligence. The four-concern operational model is in [Observability architecture](/docs/observability).
 
 ## What problem this solves
 
@@ -87,14 +87,14 @@ Backbone focuses monitoring on **Backbone-provisioned, operator-actionable resou
 | **ECS control plane**                 | AWS-managed service; runtime health is monitored through deployed services rather than ECS regional availability                                          |
 | **VPC, NAT, and interface endpoints** | AWS-managed HA boundary; low signal-to-noise for a product baseline                                                                                       |
 | **Observability stack (AMP / AMG)**   | Application observability backend — not infrastructure health                                                                                             |
-| **Governance evidence stack**         | Durable proof for investigations — not operational dashboards ([Observability architecture](/docs/observability))                                         |
+| **Governance evidence stack**         | Durable proof for investigations — not operational dashboards                                                                                             |
 | **Shared IAM and security groups**    | No standalone infra metrics; changes surface via governance evidence                                                                                      |
 | **Generic EC2 and account billing**   | Not part of the Fargate-first runtime model                                                                                                               |
 | **Route 53 and ACM**                  | Certificate renewal and DNS governance are typically handled through organisational operational processes rather than application-level CloudWatch alarms |
 
-This is a **baseline**, not a landing zone. Mature operators extend coverage with AWS Config, GuardDuty, synthetic canaries, composite alarms, and org-wide observability — documented as common operator extensions in [Observability architecture](/docs/observability).
+This is a **baseline**, not a landing zone. Mature operators extend coverage with AWS Config, GuardDuty, synthetic canaries, composite alarms, and org-wide observability.
 
-Infrastructure monitoring deploys with every cloud environment. Managed application observability has different defaults because it introduces additional infrastructure and cost. See [Operations](/docs/operations) for deployment defaults.
+Infrastructure monitoring deploys with every cloud environment. Managed application observability has different defaults because it introduces additional infrastructure and cost.
 
 ## Common operator extensions
 
@@ -115,6 +115,7 @@ Governance evidence (CloudTrail, load-balancer access logs) answers **attributio
 - [Observability architecture](/docs/observability) — four-concern model and how infrastructure monitoring relates to application observability and governance evidence
 - [Application telemetry](/docs/application-telemetry) — metrics, traces, and logs exported to AMP, X-Ray, and CloudWatch Logs
 - [Health checks](/docs/health-checks) — readiness probes used by load balancers
+- [Operations](/docs/operations) — deployment defaults for managed application observability
 - [ADR-0026: Observability backend strategy](/docs/0026-observability-backend-strategy)
 - [ADR-0027: Governance evidence architecture](/docs/0027-governance-evidence-architecture)
 - [Using Amazon CloudWatch alarms](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html) — AWS Documentation

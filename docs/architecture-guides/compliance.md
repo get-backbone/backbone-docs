@@ -15,7 +15,7 @@ Backbone ships a security-focused technical baseline designed to support common 
 
 Progress indicators in the tables below reflect **what the platform implements** versus what operators must wire, policy, or evidence in their environment.
 
-Backbone operates at the **application platform layer**, not as an AWS landing zone. It intentionally avoids mandating a specific AWS Organizations layout or provisioning account- and organization-level security services — for example AWS Organizations security OUs, AWS Config, Security Hub, GuardDuty, or Shield Advanced. Those controls need org-wide delegated administration, account topology, and often already exist in an enterprise landing zone; Backbone cannot assume that shape without conflicting with operator foundations. Operators may run single-account sandboxes or multi-account landing zones. Both paths can satisfy control objectives when required org-level controls are implemented and evidenced in the operator environment. See [ADR-0027](/docs/0027-governance-evidence-architecture).
+Backbone operates at the **application platform layer**, not as an AWS landing zone. It intentionally avoids mandating a specific AWS Organizations layout or provisioning account- and organization-level security services — for example AWS Organizations security OUs, AWS Config, Security Hub, GuardDuty, or Shield Advanced. Those controls need org-wide delegated administration, account topology, and often already exist in an enterprise landing zone; Backbone cannot assume that shape without conflicting with operator foundations. Operators may run single-account sandboxes or multi-account landing zones. Both paths can satisfy control objectives when required org-level controls are implemented and evidenced in the operator environment.
 
 ## Shared responsibility
 
@@ -46,12 +46,12 @@ The tables below separate three layers auditors typically ask about:
 Auditors often partition systems into planes. The table maps that vocabulary to Backbone without prescribing a single
 account model.
 
-| Plane                          | Meaning in Backbone                                                                  | Where to read more                                                                                                                                                                                                                                                                                         |
-|--------------------------------|--------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Control plane**              | Human and service identity, authorization, configuration, notification orchestration | [User authentication](/docs/user-authentication), [Service authentication](/docs/service-authentication), [Notifications](/docs/notifications)                                                                                                                                                             |
-| **Audit and governance**       | Immutable-style event capture and action traceability across actors and services     | [Audit](/docs/audit)                                                                                                                                                                                                                                                                                       |
-| **Data plane**                 | Domain data in PostgreSQL, DynamoDB, and S3 as provisioned per environment           | [Infrastructure](/docs/infrastructure)                                                                                                                                                                                                                                                                     |
-| **Observability and security** | Logging, metrics, tracing hooks; edge and network controls; governance evidence      | [Observability architecture](/docs/observability), [Application telemetry](/docs/application-telemetry), [Health checks](/docs/health-checks), [Platform security posture](/docs/security), [ADR-0026](/docs/0026-observability-backend-strategy), [ADR-0027](/docs/0027-governance-evidence-architecture) |
+| Plane                          | Meaning in Backbone                                                                  | Where to read more                                                                                                                             |
+|--------------------------------|--------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Control plane**              | Human and service identity, authorization, configuration, notification orchestration | [User authentication](/docs/user-authentication), [Service authentication](/docs/service-authentication), [Notifications](/docs/notifications) |
+| **Audit and governance**       | Immutable-style event capture and action traceability across actors and services     | [Audit](/docs/audit)                                                                                                                           |
+| **Data plane**                 | Domain data in PostgreSQL, DynamoDB, and S3 as provisioned per environment           | [Infrastructure](/docs/infrastructure)                                                                                                         |
+| **Observability and security** | Logging, metrics, tracing hooks; edge and network controls; governance evidence      | [Observability architecture](/docs/observability), [Platform security posture](/docs/security)                                                 |
 
 ## Control coverage by domain
 
@@ -98,25 +98,25 @@ account model.
 
 ### Audit and logging
 
-|    | Capability                                                         | Platform provides                                                                                                                                                                          | Operator still owns                                                         |
-|:--:|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| ✅ | Application audit events to a central audit service                | Annotation-driven emission, EventBridge bus → SQS ingest → PostgreSQL — [Audit](/docs/audit)                                                                                               | Retention, access control on audit data, investigation runbooks             |
-| ✅ | Event-driven audit routing                                         | Custom bus `audit-events-bus`; baseline rule to SQS; additional SIEM targets attach as rules — [Audit](/docs/audit)                                                                        | Operator SIEM / cross-account rule configuration                            |
-| ✅ | Edge access logging                                                | CloudFront and static-content access logs; ALB access logs when `governanceEvidenceEnabled` is true                                                                                        | Log review, retention, and SIEM integration                                 |
-| ✅ | VPC reject flow logs                                               | Enabled by default; one-year retention in production                                                                                                                                       | Forensic procedures and alert response                                      |
-| ✅ | Immutable central audit archive                                    | CloudTrail evidence bucket with S3 Object Lock (COMPLIANCE) and stage-aware retention when governance is enabled — [ADR-0028](/docs/0028-governance-evidence-object-lock)                  | Dedicated security / log-archive account, counsel legal hold, SIEM routing  |
-| ✅ | Regional CloudTrail and evidence bucket                            | `BackboneGovernanceStack` when `governanceEvidenceEnabled` is true (regional trail + global IAM/STS; account-scoped, not stack-scoped) — [Observability architecture](/docs/observability) | Disable when org-wide trail exists; dedicated workload account recommended  |
-| ✅ | Governance evidence protection (encryption, versioning, lifecycle) | Dedicated evidence bucket with SSE-S3 or CMK, versioning, Object Lock, and stage-aware lifecycle when governance stack deploys                                                             | Retention policy tuning, legal hold, and SIEM routing remain operator-owned |
-| ✅ | PII-safe logging discipline                                        | JSON logging, correlation MDC, `sensitive-data-mask` filter on deployed profiles — [Observability architecture](/docs/observability)                                                       | Log review, DLP, and data-minimization policy                               |
+|    | Capability                                                         | Platform provides                                                                                                              | Operator still owns                                                         |
+|:--:|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| ✅ | Application audit events to a central audit service                | Annotation-driven emission, EventBridge bus → SQS ingest → PostgreSQL                                                          | Retention, access control on audit data, investigation runbooks             |
+| ✅ | Event-driven audit routing                                         | Custom bus `audit-events-bus`; baseline rule to SQS; additional SIEM targets attach as rules                                   | Operator SIEM / cross-account rule configuration                            |
+| ✅ | Edge access logging                                                | CloudFront and static-content access logs; ALB access logs when `governanceEvidenceEnabled` is true                            | Log review, retention, and SIEM integration                                 |
+| ✅ | VPC reject flow logs                                               | Enabled by default; one-year retention in production                                                                           | Forensic procedures and alert response                                      |
+| ✅ | Immutable central audit archive                                    | CloudTrail evidence bucket with S3 Object Lock (COMPLIANCE) and stage-aware retention when governance is enabled               | Dedicated security / log-archive account, counsel legal hold, SIEM routing  |
+| ✅ | Regional CloudTrail and evidence bucket                            | Regional trail + global IAM/STS when governance is enabled (account-scoped, not stack-scoped)                                  | Disable when org-wide trail exists; dedicated workload account recommended  |
+| ✅ | Governance evidence protection (encryption, versioning, lifecycle) | Dedicated evidence bucket with SSE-S3 or CMK, versioning, Object Lock, and stage-aware lifecycle when governance stack deploys | Retention policy tuning, legal hold, and SIEM routing remain operator-owned |
+| ✅ | PII-safe logging discipline                                        | JSON logging, correlation MDC, `sensitive-data-mask` filter on deployed profiles                                               | Log review, DLP, and data-minimization policy                               |
 
 ### Observability
 
-|    | Capability                               | Platform provides                                                                                                                                                                                        | Operator still owns                                                |
-|:--:|------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
-| ✅ | OpenTelemetry instrumentation            | Tracing hooks in Quarkus services — [ADR-0026](/docs/0026-observability-backend-strategy)                                                                                                                | Sampling policy, AMP/AMG cost governance, and dashboard ownership  |
-| ✅ | JSON logging to CloudWatch               | Structured JSON on `%int` / `%test` / `%prod` with correlation and trace MDC — [Observability architecture](/docs/observability)                                                                         | Log retention, index policies, and SIEM integration                |
-| ✅ | Application telemetry and dashboards     | AMP remote write, AMG workspaces, and local Grafana assets when `observabilityEnabled` is true — [Application telemetry](/docs/application-telemetry), [Observability architecture](/docs/observability) | Dashboard ownership, on-call runbooks, and AMP/AMG cost governance |
-| ✅ | Infrastructure monitoring (infra alarms) | Per-stack CloudWatch alarms → SNS — [Infrastructure monitoring](/docs/monitoring)                                                                                                                        | Alarm routing, on-call, and escalation policies                    |
+|    | Capability                               | Platform provides                                                                                | Operator still owns                                                |
+|:--:|------------------------------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| ✅ | OpenTelemetry instrumentation            | Tracing hooks in Quarkus services                                                                | Sampling policy, AMP/AMG cost governance, and dashboard ownership  |
+| ✅ | JSON logging to CloudWatch               | Structured JSON on `%int` / `%test` / `%prod` with correlation and trace MDC                     | Log retention, index policies, and SIEM integration                |
+| ✅ | Application telemetry and dashboards     | AMP remote write, AMG workspaces, and local Grafana assets when managed observability is enabled | Dashboard ownership, on-call runbooks, and AMP/AMG cost governance |
+| ✅ | Infrastructure monitoring (infra alarms) | Per-stack CloudWatch alarms → SNS                                                                | Alarm routing, on-call, and escalation policies                    |
 
 ### Change management and secure engineering
 
@@ -130,13 +130,13 @@ account model.
 
 ### Data subject rights, retention, and communication
 
-|    | Capability                                                    | Platform provides                                                                                                              | Operator still owns                                                                                   |
-|:--:|---------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| ❌ | Right to erasure                                              | No account-deletion or cross-store erasure API                                                                                 | Operator procedures (and product features) for Art. 17 across Cognito, RDS, DynamoDB, S3, and backups |
-| ❌ | Personal data export API                                      | No single cross-store export                                                                                                   | Articles 15 and 20 procedures and product features                                                    |
-| ❌ | Legal retention and hold                                      | No legal-hold or counsel-driven retention controls in baseline                                                                 | Retention schedules, legal hold, and counsel review                                                   |
-| ✅ | Transactional notifications with templates and rate awareness | [Notifications](/docs/notifications), provider throttling — [ADR-0016](/docs/0016-notification-service-rate-limiting-strategy) | Content and marketing policy, bounce handling, subprocessor DPAs with notification providers          |
-| ✅ | Notification unsubscribe integrity                            | Opaque tokens without PII in URLs — [ADR-0019](/docs/0019-notification-service-unsubscribe-token-security)                     | Consent records and marketing compliance                                                              |
+|    | Capability                                                    | Platform provides                                              | Operator still owns                                                                                   |
+|:--:|---------------------------------------------------------------|----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| ❌ | Right to erasure                                              | No account-deletion or cross-store erasure API                 | Operator procedures (and product features) for Art. 17 across Cognito, RDS, DynamoDB, S3, and backups |
+| ❌ | Personal data export API                                      | No single cross-store export                                   | Articles 15 and 20 procedures and product features                                                    |
+| ❌ | Legal retention and hold                                      | No legal-hold or counsel-driven retention controls in baseline | Retention schedules, legal hold, and counsel review                                                   |
+| ✅ | Transactional notifications with templates and rate awareness | Template-based email with provider throttling                  | Content and marketing policy, bounce handling, subprocessor DPAs with notification providers          |
+| ✅ | Notification unsubscribe integrity                            | Opaque tokens without PII in URLs                              | Consent records and marketing compliance                                                              |
 
 ## SOC 2 (Trust Services Criteria) quick map
 
@@ -178,6 +178,16 @@ subprocessors including AWS.
 
 ## Further reading
 
+- [Platform security posture](/docs/security)
 - [Observability architecture](/docs/observability) — how operational concerns are separated
+- [Application telemetry](/docs/application-telemetry)
+- [Infrastructure monitoring](/docs/monitoring)
+- [Audit logging](/docs/audit)
+- [Notifications](/docs/notifications)
 - [Architecture decision records](/docs/adrs)
+- [ADR-0026: Observability backend strategy](/docs/0026-observability-backend-strategy)
+- [ADR-0027: Governance evidence architecture](/docs/0027-governance-evidence-architecture)
+- [ADR-0028: Governance evidence Object Lock](/docs/0028-governance-evidence-object-lock)
+- [ADR-0016: Notification service rate limiting](/docs/0016-notification-service-rate-limiting-strategy)
+- [ADR-0019: Notification unsubscribe token security](/docs/0019-notification-service-unsubscribe-token-security)
 - [AWS Compliance Programs](https://aws.amazon.com/compliance/programs/) — AWS

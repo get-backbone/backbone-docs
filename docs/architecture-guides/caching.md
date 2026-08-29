@@ -7,7 +7,7 @@ Backbone runs containerized services on AWS behind load balancers. When more tha
 
 Backbone addresses this with a **shared Redis layer** (Amazon ElastiCache in deployed environments) used for application caching and distributed rate limiting. Together, these give you horizontal scale without sacrificing predictable behaviour at the edge.
 
-This guide is for architecture review, procurement, and security diligence. Implementation detail lives in [ADR-0014: Application caching strategy](/docs/0014-application-caching-strategy).
+This guide is for architecture review, procurement, and security diligence.
 
 ## What problem this solves
 
@@ -91,15 +91,16 @@ Edge-level rate limiting (CloudFront WAF) remains in place independently; see [R
 
 ## Operator expectations
 
-| Topic                 | Expectation                                                                                                                      |
-|-----------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| **Scaling**           | Adding ECS tasks does not require cache or rate-limit configuration changes; shared Redis coordinates behaviour.                 |
-| **Monitoring**        | Cache and throttle metrics are exported for observability dashboards (see [Application telemetry](/docs/application-telemetry)). |
-| **Failure modes**     | Cache degradation increases backend load; rate-limit Redis failure removes tasks from rotation until healthy.                    |
-| **Local development** | Developers run a local Redis instance for prod-like behaviour; automated tests use in-memory alternatives for speed.             |
+| Topic                 | Expectation                                                                                                          |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------|
+| **Scaling**           | Adding ECS tasks does not require cache or rate-limit configuration changes; shared Redis coordinates behaviour.     |
+| **Monitoring**        | Cache and throttle metrics are exported for observability dashboards.                                                |
+| **Failure modes**     | Cache degradation increases backend load; rate-limit Redis failure removes tasks from rotation until healthy.        |
+| **Local development** | Developers run a local Redis instance for prod-like behaviour; automated tests use in-memory alternatives for speed. |
 
 ## Further reading
 
 - [ADR-0014: Application caching strategy](/docs/0014-application-caching-strategy)
+- [Application telemetry](/docs/application-telemetry) — cache and throttle metrics in observability dashboards
 - [Rate limiting](/docs/rate-limiting) — shared Redis layer for distributed limits
 - [Best practices: Valkey and Redis OSS caches](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/BestPractices.html) — AWS Documentation

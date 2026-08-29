@@ -61,6 +61,7 @@ Instead of assembling these concerns piece by piece, you start with a coherent p
 ## How Backbone works
 
 - Purchase a Backbone platform licence file from the [Backbone website](https://backbonehq.io/#pricing).
+- Your licence **tier** determines which platform configuration options the bootstrap wizard offers (see [Platform features](/docs/features#licence-tiers-and-platform-configuration)).
 - Your organization is added as a Contributor, so you can fork the `backbone-platform` repository.
 - You own and develop that forked codebase.
 - Provision the provided CI/CD workflows in your GitHub account.

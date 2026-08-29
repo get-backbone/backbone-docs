@@ -5,7 +5,7 @@ summary: "How Backbone protects public APIs from abuse and accidental overload a
 
 Backbone applies rate limiting at **multiple layers**. Edge controls absorb broad traffic spikes and scanning noise; application-level limits enforce fair use per user, per service identity, and per client IP. Together they protect login flows, authenticated APIs, and backend capacity without requiring operators to build a separate abuse-prevention stack.
 
-This guide is for architecture review, procurement, and security diligence. Outbound provider rate limiting for the notification service (SES, and similar) is a separate concern — see [Notifications](/docs/notifications) and [ADR-0016](/docs/0016-notification-service-rate-limiting-strategy).
+This guide is for architecture review, procurement, and security diligence. Outbound provider rate limiting for the notification service is a separate concern — see [Notifications](/docs/notifications).
 
 ## What problem this solves
 
@@ -127,4 +127,5 @@ Local development includes Grafana dashboards for throttle metrics; production e
 
 - [Application caching and distributed scale](/docs/caching) — shared Redis infrastructure
 - [ADR-0016: Notification service rate limiting](/docs/0016-notification-service-rate-limiting-strategy) — outbound provider limits (distinct from HTTP ingress)
+- [ADR-0022: Public ALB edge and origin protection](/docs/0022-public-alb-edge-and-origin-protection)
 - [AWS WAF rate-based rule statements](https://docs.aws.amazon.com/waf/latest/developerguide/waf-rule-statement-type-rate-based-request-limiting.html) — AWS Documentation

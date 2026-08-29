@@ -5,7 +5,7 @@ summary: "How end users sign in, register, and access the platform with stateles
 
 Human users authenticate with **stateless JWTs** issued by Amazon Cognito. After sign-in or registration, clients store tokens locally and send them on each API request. There is **no server-side session store** — any service instance can validate tokens independently, which supports horizontal scaling behind CloudFront and load balancers.
 
-This guide is for architecture review, procurement, and security diligence. Technical decisions are recorded in [ADR-0011](/docs/0011-stateless-jwt-authentication) and [ADR-0004](/docs/0004-use-aws-cognito-across-all-environments).
+This guide is for architecture review, procurement, and security diligence.
 
 ## What problem this solves
 
@@ -108,4 +108,5 @@ User JWT validation results are cached in Redis across ECS tasks for performance
 
 - [Service authentication](/docs/service-authentication) — workload identity (separate trust domain)
 - [ADR-0011: Stateless JWT authentication](/docs/0011-stateless-jwt-authentication)
+- [ADR-0004: Use AWS Cognito across all environments](/docs/0004-use-aws-cognito-across-all-environments)
 - [Amazon Cognito user pool security best practices](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-security-best-practices.html) — AWS Documentation

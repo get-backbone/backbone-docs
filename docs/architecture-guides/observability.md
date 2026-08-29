@@ -5,7 +5,7 @@ summary: "How Backbone separates application observability, infrastructure monit
 
 Backbone platforms answer four distinct operational questions. Although they all involve collecting operational data, they serve different purposes, have different consumers, and require different retention and protection models. Backbone deliberately keeps these concerns separate — especially governance evidence and operational observability.
 
-This guide is the architectural map. It explains how Backbone thinks about operational capabilities — not how to deploy or configure them. Depth guides: [Application telemetry](/docs/application-telemetry), [Infrastructure monitoring](/docs/monitoring), [Audit](/docs/audit). Deployment defaults are in [Operations](/docs/operations).
+Tier defaults are summarised in [Platform features](/docs/features#licence-tiers-and-platform-configuration).
 
 ## Four concerns
 
@@ -32,7 +32,7 @@ Application audit records business-domain events such as authentication, registr
 
 ### Governance evidence
 
-Backbone's governance evidence capability uses CloudTrail, load-balancer access logs, and protected evidence storage. Deployments may disable this capability when equivalent organization-wide evidence stores already exist. Deployment scope, account boundaries, and flag defaults are in [Operations — Governance evidence](/docs/operations#4-governance-evidence-backbonegovernancestack) and [ADR-0027](/docs/0027-governance-evidence-architecture).
+Backbone's governance evidence capability uses CloudTrail, load-balancer access logs, and protected evidence storage. Deployments may disable this capability when equivalent organization-wide evidence stores already exist.
 
 ### Three independent audit and evidence streams (do not conflate)
 
@@ -50,7 +50,7 @@ Backbone's governance evidence capability uses CloudTrail, load-balancer access 
 | **INT**          | Lightweight logging only          | Alarms deploy             | Off by default               |
 | **STAGE / PROD** | Full managed observability        | Alarms deploy             | On by default (configurable) |
 
-INT is optimized for integration testing rather than production-scale operational visibility. Deployment defaults and environment-specific behaviour are documented in [Operations](/docs/operations). See [ADR-0026](/docs/0026-observability-backend-strategy) for backend detail.
+INT is optimized for integration testing rather than production-scale operational visibility.
 
 ## Governance evidence vs application observability
 
@@ -77,6 +77,8 @@ Backbone operates at the **application platform layer**, not as an AWS landing z
 
 - [Application telemetry](/docs/application-telemetry) — metrics, traces, and logs
 - [Infrastructure monitoring](/docs/monitoring) — CloudWatch dashboards and alarms
+- [Audit logging](/docs/audit) — application-domain audit events
+- [Operations](/docs/operations) — deployment defaults and managed observability setup
 - [ADR-0026: Observability backend strategy](/docs/0026-observability-backend-strategy)
 - [ADR-0027: Governance evidence architecture](/docs/0027-governance-evidence-architecture)
 - [AWS Well-Architected Framework — Operational Excellence pillar](https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/welcome.html) — AWS Documentation

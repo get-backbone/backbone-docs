@@ -63,4 +63,4 @@ Rejected for Backbone Core. Landing-zone / security OU patterns stay operator ex
 
 - [Amazon S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html)
 - [Compliance](/docs/compliance)
-- [Operations - Governance evidence](/docs/operations#4-governance-evidence-backbonegovernancestack)
+- [Platform features — Licence tiers](/docs/features#licence-tiers-and-platform-configuration)
