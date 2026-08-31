@@ -3,6 +3,9 @@ title: "Platform features"
 summary: "Discrete inventory of Backbone platform capabilities across identity, operations, domain services, delivery, and governance."
 ---
 
+<!-- markdownlint-disable-file MD033 -->
+<!-- MD033 off: inline HTML wraps licence-tier prefixes so ReadMe can colour them. -->
+
 See [Licence tiers and platform configuration](#licence-tiers-and-platform-configuration) for capability configuration.
 
 ## Identity and security
@@ -24,9 +27,9 @@ See [Licence tiers and platform configuration](#licence-tiers-and-platform-confi
 - Encryption at rest with AWS-managed keys (AMK)
 - DNSSEC on Route53 hosted zones
 - CSP / XSS posture for browser token storage
-- [Growth + Enterprise licence tier] Customer-managed KMS (platform-provisioned CMKs per encryption domain)
-- [Enterprise-only licence tier] Bring-your-own-key (BYOK) ARNs per encryption domain
-- [Enterprise-only licence tier] Optional internal ALB TLS (east-west HTTPS on the internal listener)
+- <span style={{ color: 'var(--color-text-minimum)' }}>[Growth + Enterprise licence tier]</span> Customer-managed KMS (platform-provisioned CMKs per encryption domain)
+- <span style={{ color: 'var(--color-text-minimum)' }}>[Enterprise-only licence tier]</span> Bring-your-own-key (BYOK) ARNs per encryption domain
+- <span style={{ color: 'var(--color-text-minimum)' }}>[Enterprise-only licence tier]</span> Optional internal ALB TLS (east-west HTTPS on the internal listener)
 
 ## Traffic control and resilience
 
@@ -35,7 +38,7 @@ See [Licence tiers and platform configuration](#licence-tiers-and-platform-confi
 - Distributed caching (ElastiCache Redis; cache-aside)
 - Circuit breakers / fault tolerance on persistence paths
 - Dependency-aware health / readiness (Postgres, DynamoDB, S3, Cognito, SES, Redis)
-- [Enterprise-only licence tier] HA endpoint AZ mode (ALB and VPC interface endpoints spanning AZs)
+- <span style={{ color: 'var(--color-text-minimum)' }}>[Enterprise-only licence tier]</span> HA endpoint AZ mode (ALB and VPC interface endpoints spanning AZs)
 
 ## Observability
 
@@ -45,7 +48,7 @@ See [Licence tiers and platform configuration](#licence-tiers-and-platform-confi
 - Structured / correlated logging (MDC, `X-Correlation-Id`)
 - PII / sensitive-data log masking
 - CloudWatch + SNS infrastructure monitoring / alerting
-- [Growth + Enterprise licence tier] Optional managed observability (AMP remote write + AMG + X-Ray OTLP export)
+- <span style={{ color: 'var(--color-text-minimum)' }}>[Growth + Enterprise licence tier]</span> Optional managed observability (AMP remote write + AMG + X-Ray OTLP export)
 
 ## Domain services
 
@@ -88,9 +91,9 @@ See [Licence tiers and platform configuration](#licence-tiers-and-platform-confi
 - Least-privilege IAM posture documentation; exceptions documented (nag)
 - Edge access logging (CloudFront and static-content stores)
 - VPC reject flow logs (PROD; one-year retention)
-- [Enterprise-only licence tier] Regional CloudTrail (deployment region plus global IAM/STS) with log-file integrity validation
-- [Enterprise-only licence tier] Protected evidence storage (versioning, lifecycle, S3 Object Lock COMPLIANCE, stage-aware retention)
-- [Enterprise-only licence tier] ALB access logs into a companion evidence bucket
+- <span style={{ color: 'var(--color-text-minimum)' }}>[Enterprise-only licence tier]</span> Regional CloudTrail (deployment region plus global IAM/STS) with log-file integrity validation
+- <span style={{ color: 'var(--color-text-minimum)' }}>[Enterprise-only licence tier]</span> Protected evidence storage (versioning, lifecycle, S3 Object Lock COMPLIANCE, stage-aware retention)
+- <span style={{ color: 'var(--color-text-minimum)' }}>[Enterprise-only licence tier]</span> ALB access logs into a companion evidence bucket
 
 Disable the CloudTrail, Object Lock, and ALB access-log capabilities when your organization already operates org-wide trails and log archives.
 
