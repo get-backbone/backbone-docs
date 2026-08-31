@@ -5,3 +5,6 @@
 - refreshusertoken
 - register
 - exchangetoken
+- forgotpassword
+- googlelogin
+- resetpassword
