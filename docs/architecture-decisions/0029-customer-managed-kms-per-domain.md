@@ -54,4 +54,4 @@ Operators who require CMKs on those surfaces can implement as required.
 - [Platform security posture](/docs/security)
 - [Compliance](/docs/compliance)
 - [Platform features — Licence tiers](/docs/features#licence-tiers-and-platform-configuration)
-- [Development](/docs/development)
+- [Onboarding](/docs/onboarding)

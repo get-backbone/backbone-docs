@@ -1,13 +1,13 @@
 ---
 title: "Cheatsheet"
-summary: "Step-by-step explanations, prerequisites, and follow-on setup are in DEVELOPMENT.md — Environment Setup."
+summary: "Comprehensive control plane operations cheatsheet."
 ---
 
 `task --list` · `task --list-all`
 
 ## Bootstrap dev env
 
-Step-by-step explanations, prerequisites, and follow-on setup are in [DEVELOPMENT.md — Environment Setup](/docs/development#environment-setup).
+Step-by-step explanations, prerequisites, and follow-on setup are in [Onboarding — Local workstation setup](/docs/onboarding#local-workstation-setup).
 
 ### Tooling
 

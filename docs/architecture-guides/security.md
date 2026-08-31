@@ -366,7 +366,7 @@ Each case should include an inline rationale and corresponding cdk-nag suppressi
 - [Architecture decision records](/docs/adrs)
 - [Observability architecture](/docs/observability) — governance evidence and operator extensions
 - [Operations](/docs/operations) — deployment defaults and platform configuration
-- [Development](/docs/development) — platform configuration bootstrap
+- [Onboarding](/docs/onboarding) — platform configuration bootstrap
 - [Runbook §9: Enable internal ALB HTTPS](/docs/runbook#9-enable-internal-alb-https)
 - [Platform features — licence tiers](/docs/features#licence-tiers-and-platform-configuration)
 - [ADR-0022: Public ALB edge and origin protection](/docs/0022-public-alb-edge-and-origin-protection)

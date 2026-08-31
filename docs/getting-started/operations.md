@@ -1,13 +1,13 @@
 ---
 title: "Operations"
-summary: "Tasks that sit outside day-to-day service development: local metrics (Prometheus and Grafana),"
+summary: "Operational tasks that sit outside day-to-day service development."
 ---
 
 Tasks that sit outside day-to-day service development: local metrics (Prometheus and Grafana), CDK against AWS or Floci, and one-time GitHub Actions OIDC bootstrap.
 
-For machine setup and running Quarkus locally, see [DEVELOPMENT.md](/docs/development).
-
-For a compact task index, see [CHEATSHEET.md](/docs/cheatsheet).
+For first-time setup (repository, licence, bootstrap), see [Onboarding](/docs/onboarding).  
+For running Quarkus locally, see [Development](/docs/development).  
+For a comprehensive task index, see [cheatsheet.md](/docs/cheatsheet).
 
 For step-by-step operational runbook procedures (for example ECS native vs JVM, self-hosted runners for image builds, and other topics as they are added), see [RUNBOOK.md](/docs/runbook).
 
@@ -38,7 +38,7 @@ BACKBONE_STAGE_ENV=INT task aws:deploy-github-role
 # Repeat with BACKBONE_STAGE_ENV=STAGE and PROD against those AWS accounts when required
 ```
 
-OIDC trust is scoped to `github.organization` in `platform-config.yml` (set via `task bootstrap:platform-config`). The role allows Actions from `backbone-*` repos in that org (classic and immutable `sub` forms). After changing the organization, re-run the deploy above for each account.
+OIDC trust is scoped to `github.organization` in `platform-config.yml` (set via `task bootstrap:platform-config`; see [Onboarding](/docs/onboarding#5-client-platform-infrastructure-configuration) if you have not run it yet). The role allows Actions from `backbone-*` repos in that org (classic and immutable `sub` forms). After changing the organization, re-run the deploy above for each account.
 
 The INT role includes ECR push to the central registry. STAGE/PROD roles can force-deploy ECS and run CDK in their accounts, but do not push images. Paid GitHub plans can later add deployment protection (e.g. Environment required reviewers on PROD) without changing this bootstrap.
 
@@ -248,4 +248,4 @@ task metrics:start
 task metrics:stop
 ```
 
----
+Next: [Infrastructure](/docs/infrastructure) for AWS topology, datastores, and cost.

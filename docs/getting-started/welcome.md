@@ -8,33 +8,32 @@ summary: "What Backbone is, what you get out of the box, and where to start."
 
 Backbone is a production-ready starting point for building SaaS (Software as a Service) and distributed systems on AWS with Java and Quarkus.
 
-Backbone is not a framework. It is a production system you fork and run.
+Backbone is not a framework. It is a production system you copy into your organization and run.
 
-You fork the platform, deploy it into your own AWS accounts, and keep full ownership of the infrastructure, services, and data.
+You take the platform into your own GitHub org, deploy it into your own AWS accounts, and keep full ownership of the infrastructure, services, and data. The vendor has no access to your repository.
 
 ### Quick start
 
 <Cards columns={3}>
+  <Card title="Onboarding" icon="fa-flag" href="/docs/onboarding">
+    Template repository, remotes, licence, and bootstraping.
+  </Card>
   <Card title="Development" icon="fa-laptop-code" href="/docs/development">
-    Run Backbone locally.
+    Build, test and run Backbone locally.
   </Card>
   <Card title="Operations" icon="fa-gears" href="/docs/operations">
-    Deploy with GitHub Actions, OIDC, and CDK.
-  </Card>
-  <Card title="Infrastructure" icon="fa-cloud" href="/docs/infrastructure">
-    AWS topology, datastores, and cost.
+    Deploy to AWS with GitHub Actions, OIDC, and CDK.
   </Card>
 </Cards>
 
 ### What you get
 
-- ECS (Elastic Container Service) Fargate deployment model
-- GitHub Actions CI/CD with OIDC (OpenID Connect) based AWS access
-- AWS CDK (Cloud Development Kit) infrastructure code
-- Floci-powered local development
-- Authentication, audit, notification, and document services
-- Prometheus and Grafana observability
-- A reference web application you can run locally or deploy immediately
+- Floci-powered local development, with a stateless reference UI and BFF (Backend for Frontend) you can run immediately
+- Six domain services (auth, actor, audit, notification, document, template)
+- AWS CDK (Cloud Development Kit) on ECS Fargate (private-by-default networking, least-privilege IAM)
+- GitHub Actions CI/CD with OpenID Connect (OIDC) to AWS, build-once images, and diffed ECS service deploys
+- Metrics, traces, logs, and CloudWatch infrastructure monitoring
+- Identity, edge protection, and audit / governance foundations (licence tier gates the higher-assurance options)
 
 For the full capability breakdown, see [Platform features](/docs/features).
 
@@ -61,14 +60,29 @@ Instead of assembling these concerns piece by piece, you start with a coherent p
 ## How Backbone works
 
 - Purchase a Backbone platform licence file from the [Backbone website](https://backbonehq.io/#pricing).
-- Your licence **tier** determines which platform configuration options the bootstrap wizard offers (see [Platform features](/docs/features#licence-tiers-and-platform-configuration)).
-- Your organization is added as a Contributor, so you can fork the `backbone-platform` repository.
-- You own and develop that forked codebase.
+- Your licence tier determines which platform configuration options the bootstrap allows.
+- Your organization is added as a Contributor on `backbone-platform` (read access to the vendor tree).
+- Copy that tree into a private repository in your GitHub org (**Use this template**, not Fork). The vendor has no access to your repository. Steps: [Onboarding](/docs/onboarding).
+- You own and develop that copy.
 - Provision the provided CI/CD workflows in your GitHub account.
 - Deploy into your AWS accounts. Development environments can run within AWS free tier limits.
-- Receive future platform updates by syncing your fork to the upstream `backbone-platform` repository.
+- Pull later platform updates from `backbone-platform` into your repository when you choose.
 
 You retain full ownership and control of infrastructure, services, deployments, and data.
+
+<br />
+
+---
+
+## Licence tiers
+
+Every signed licence tier includes the same domain services, CDK, and CI/CD spine. Higher tiers unlock configuration that costs more to run or that regulated operators typically require.
+
+- **Foundation** is the full operational platform listed in [Platform features](/docs/features).
+- **Growth** adds Backbone-provisioned customer-managed keys and optional Amazon Managed Prometheus, Grafana, and X-Ray.
+- **Enterprise** adds high-availability endpoints, internal HTTPS, bring-your-own-key (BYOK), and governance evidence (CloudTrail, Object Lock, ALB access logs).
+
+Per-environment configuration limits are described in full in [Platform features](/docs/features#licence-tiers-and-platform-configuration).
 
 <br />
 
@@ -80,7 +94,7 @@ These guides cover how Backbone is built, how it runs, and how to extend it.
 
 <Cards columns={3}>
   <Card title="Development" icon="fa-laptop-code" href="/docs/development">
-    Local setup, tooling, licence, and Quarkus workflow.
+    Docker, Floci, tests, and Quarkus workflow.
   </Card>
   <Card title="Operations" icon="fa-gears" href="/docs/operations">
     Deployments, GitHub OIDC (OpenID Connect), AWS, Floci, CDK.
