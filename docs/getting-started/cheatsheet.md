@@ -23,6 +23,7 @@ task lefthook:install                              # install git hooks configure
 ```bash
 task bootstrap:licence-install                     # install the licence file on your machine
 task bootstrap:licence-secure                      # secure the licence file and directory
+task bootstrap:licence-github                      # publish the licence file as Actions secret BACKBONE_LICENCE
 ```
 
 ### Configuration
@@ -30,15 +31,6 @@ task bootstrap:licence-secure                      # secure the licence file and
 ```bash
 task bootstrap:platform-config                     # configure interactive platform-config.yml (DNS, ECS, NAT)
 task bootstrap:dotenvrc                            # generate .envrc.local from API keys and secrets
-```
-
-## Bootstrap GitHub env
-
-Commentary, prerequisites, and follow-on setup are in [OPERATIONS.md — GitHub Setup](/docs/operations#github-setup).
-
-```bash
-BACKBONE_STAGE_ENV=INT task cdk:synth
-BACKBONE_STAGE_ENV=INT task aws:deploy-github-role # deploy GitHub OIDC role (repeat for STAGE/PROD)
 ```
 
 ## Local development
@@ -102,27 +94,9 @@ task cdk:synth
 task cdk:diff
 ```
 
-### AWS env development
+### Local CDK development with Floci
 
-```bash
-task cdk:install                                   # npm install in infra/ (CI and real AWS)
-task aws:bootstrap                                 # CDKToolkit in workload region (backbone-sandbox profile) + us-east-1
-task aws:bootstrap-xray                            # X-Ray OTLP → CloudWatch Logs (once per account/region)
-
-task aws:deploy-all                                # deploy all stacks (AWS)
-task aws:deploy-ecr                                # deploy ECR stack (INT)
-task aws:deploy-cognito                            # deploy Cognito (INT needs GitHubRole first)
-task aws:deploy-domain                             # deploy Domain stack (requires manual DNS updates)
-
-task aws:deploy-observability                      # deploy Observability stack only (AMP + AMG)
-task aws:grant-observability -- you@example.com    # grant AMG workspace Admin (after deploy/hibernate)
-
-task aws:hibernate                                 # delete non-prod runtime + foundation tier CFN stacks (cost-optimisation)
-```
-
-### Floci local CDK development
-
-CDK development is predominantly done directly in AWS free tier. Floci `cdklocal` is supported for development and testing.
+`cdklocal` and Floci emulation support free CDK development and testing locally.
 
 ```bash
 task cdk:install                                   # install Node dependencies and verify cdklocal
@@ -139,4 +113,26 @@ task cdk:deploy-runtime
 
 task cdk:destroy-all
 task cdk:destroy-runtime
+```
+
+### AWS env bootstrap
+
+AWS and GitHub CI bootstrap are only defined in [Operations — First-time: AWS and GitHub CI](/docs/operations##first-time-aws-and-github-ci).
+
+### AWS env deployment
+
+```bash
+task cdk:install                                   # npm install in infra/ (CI and real AWS)
+task aws:bootstrap                                 # CDKToolkit in workload region (backbone-sandbox profile) + us-east-1
+task aws:bootstrap-xray                            # X-Ray OTLP → CloudWatch Logs (once per account/region)
+
+task aws:deploy-all                                # deploy all stacks (AWS)
+task aws:deploy-ecr                                # deploy ECR stack (INT)
+task aws:deploy-cognito                            # deploy Cognito (INT needs GitHubRole first)
+task aws:deploy-domain                             # deploy Domain stack (requires manual DNS updates)
+
+task aws:deploy-observability                      # deploy Observability stack only (AMP + AMG)
+task aws:grant-observability -- you@example.com    # grant AMG workspace Admin (after deploy/hibernate)
+
+task aws:hibernate                                 # delete non-prod runtime + foundation tier CFN stacks (cost-optimisation)
 ```
