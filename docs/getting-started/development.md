@@ -123,8 +123,8 @@ task test:static                                   # OWASP(NVD)/PMD/SpotBugs/Che
 
 Weekly CI publishes Clover coverage to Codecov. Local runs only write HTML under `target/site/clover/` (no upload).
 
-- [backbone-core](https://github.com/get-backbone/backbone-core) — [![coverage](https://codecov.io/github/get-backbone/backbone-core/graph/badge.svg?token=6AJ2I85TKH)](https://app.codecov.io/github/get-backbone/backbone-core)
-- [backbone-kit](https://github.com/get-backbone/backbone-kit) — [![coverage](https://codecov.io/github/get-backbone/backbone-kit/graph/badge.svg?token=RP8Z2NWG9L)](https://app.codecov.io/github/get-backbone/backbone-kit)
+[`backbone-kit`](https://github.com/get-backbone/backbone-kit)   [![coverage](https://codecov.io/github/get-backbone/backbone-kit/graph/badge.svg?token=RP8Z2NWG9L)](https://app.codecov.io/github/get-backbone/backbone-kit)
+[`backbone-core`](https://github.com/get-backbone/backbone-core)   [![coverage](https://codecov.io/github/get-backbone/backbone-core/graph/badge.svg?token=6AJ2I85TKH)](https://app.codecov.io/github/get-backbone/backbone-core)
 
 ```bash
 task _clover:unit
