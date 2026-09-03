@@ -23,7 +23,6 @@ For a comprehensive task index, see the [Cheatsheet](/docs/cheatsheet).
 - [Day-2: AWS](#day-2-aws)
   - [CDK lifecycle](#cdk-lifecycle)
   - [Observability](#observability)
-- [GitHub Actions reference](#github-actions-reference)
 - [Local CDK development with Floci](#local-cdk-development-with-floci)
 - [Local metrics](#local-metrics)
 
@@ -74,7 +73,9 @@ The INT GitHub role includes ECR push to the central registry. STAGE/PROD roles 
 
 The assumption/prerequisite is that the administrator/operator has already set up their workstation as per the required tools and credentials. See [Onboarding - Local workstation setup](/docs/onboarding#local-workstation-setup).
 
-Sets the repository variables and secrets listed under [GitHub Actions reference](#github-actions-reference).
+Publish repository Actions values once (licence file, matching `.envrc.local` keys, then remaining CI-only prompts).
+
+Day-2 overrides such as `BACKBONE_ECS_RUNTIME_MODE=jvm` or self-hosted ECR runner labels stay in the [Runbook](/docs/runbook).
 
 ```bash
 task bootstrap:github-licence
@@ -173,54 +174,6 @@ Optional: `BACKBONE_STAGE_ENV` (default `INT`), `AMG_ROLE` (`ADMIN` | `EDITOR` |
 Open the workspace URL (`Backbone-OBSERVABILITY-AMG-WORKSPACE-URL`) → **Sign in with AWS IAM Identity Center** (Identity Center password, not `backbone-sandbox` access keys).
 
 After first deploy, complete the AMG datasource and X-Ray plugin checklist in [Runbook §8](/docs/runbook#8-amg-post-deploy-checklist).
-
----
-
-## GitHub Actions reference
-
-Pipelines run on free-tier GitHub plans. Most workflows finish in a few minutes; all currently finish in under 10 minutes.
-
-| Workflow                                                                                                                         | When                                                    | What                                                                     |
-|----------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|--------------------------------------------------------------------------|
-| [`01-infra-bootstrap.yml`](https://github.com/get-backbone/backbone-platform/blob/main/.github/workflows/01-infra-bootstrap.yml) | `workflow_dispatch`                                     | After OIDC exists: Domain (DNS mid-flow), GitHubRole updates, ECR on INT |
-| [`10-infra-deploy.yml`](https://github.com/get-backbone/backbone-platform/blob/main/.github/workflows/10-infra-deploy.yml)       | `workflow_dispatch`, or push `infra/**` on `main` (INT) | `cdk synth` + `deploy-all`                                               |
-
-Workflows pick the target account from the variables below (e.g. INT for ECR push; INT/STAGE/PROD from a `stage_env` choice).
-
-**Repository variables** (Settings → Secrets and variables → Actions → Variables):
-
-- `AWS_REGION` - region for INT / STAGE / PROD (same region for all promotion stages)
-- `INT_AWS_ACCOUNT_ID` - AWS account ID for the INT stage (central ECR registry; image push and INT deploys)
-- `STAGE_AWS_ACCOUNT_ID` - AWS account ID for the STAGE stage
-- `PROD_AWS_ACCOUNT_ID` - AWS account ID for the PROD stage
-- `BACKBONE_ECS_RUNTIME_MODE` (optional) - `jvm` (faster image build; slower container startup) or `native` (long builds; smaller images; better cold start)
-- `USER_BACKBONE_DEPLOY` - GitHub username for the account that owns `secrets.PAT_BACKBONE_DEPLOY` (workflows pass it as `GITHUB_MAVEN_USERNAME` to `configure-maven-github.sh`)
-
-**Repository secrets** (Settings → Secrets and variables → Actions → Secrets):
-
-Backbone-related:
-
-- `PAT_BACKBONE_DEPLOY` - GitHub token for deployment
-- `SMALLRYE_CONFIG_SECRET_KEY` (base64 encoded) - Encryption key for secrets.properties
-- `GPG_PRIVATE_KEY` - GPG private key for signing artifacts during releases; see [03-release-bump.yml](https://github.com/get-backbone/backbone-platform/blob/main/.github/workflows/03-release-bump.yml)
-- `GPG_PASSPHRASE` - GPG passphrase for signing artifacts during releases
-
-External:
-
-- `NVD_API_KEY` - NVD API key for vulnerability scanning; see [NIST - Request an API Key](https://nvd.nist.gov/developers/request-an-api-key)
-- `OSS_INDEX_USER` and `OSS_INDEX_API_KEY` - Sonatype Guide credentials for weekly CI OWASP only. Local runs leave the analyzer off. See [Sonatype Guide](https://guide.sonatype.com/) and [OSS Index analyzer](https://dependency-check.github.io/DependencyCheck/analyzers/oss-index-analyzer.html)
-- `CODECOV_TOKEN` - Codecov repository upload token for weekly CI only. Local Clover HTML reports are never uploaded. See [Codecov upload token](https://docs.codecov.com/docs/codecov-uploader#upload-token)
-
-Login with Google (and OAuth refresh-token storage):
-
-- `GOOGLE_OAUTH2_CLIENT_ID` - Google OAuth 2.0 Web client ID; see [Google Cloud Console credentials](https://console.cloud.google.com/apis/credentials)
-- `GOOGLE_OAUTH2_CLIENT_SECRET` - Google OAuth 2.0 Web client secret
-- `BACKBONE_OAUTH2_REFRESH_TOKEN_ENCRYPTION_KEY` - Encryption key for OAuth2 refresh token encryption (`openssl rand -base64 32`)
-
-Optional, if you wish to keep frontend 'Login with LinkedIn' and have enabled `linkedInOauthEnabled` in `platform-config.yml`:
-
-- `LINKEDIN_OAUTH2_CLIENT_ID` - LinkedIn OAuth 2.0 client ID; see [LinkedIn - OAUTH 2.0 Overview](https://learn.microsoft.com/en-gb/linkedin/shared/authentication/authentication)
-- `LINKEDIN_OAUTH2_CLIENT_SECRET` - LinkedIn OAuth 2.0 client secret
 
 ---
 
