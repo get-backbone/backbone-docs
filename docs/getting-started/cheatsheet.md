@@ -23,7 +23,6 @@ task lefthook:install                              # install git hooks configure
 ```bash
 task bootstrap:licence-install                     # install the licence file on your machine
 task bootstrap:licence-secure                      # secure the licence file and directory
-task bootstrap:licence-github                      # publish the licence file as Actions secret BACKBONE_LICENCE
 ```
 
 ### Configuration
@@ -81,6 +80,14 @@ task metrics:prometheus-config
 task metrics:grafana-start
 task metrics:grafana-stop
 task metrics:grafana-dashboard
+```
+
+## GitHub env bootstrap
+
+```bash
+task bootstrap:github-licence                      # publish the licence file as GHA secret BACKBONE_LICENCE
+task bootstrap:github-env                          # publish .envrc.local entries as matching GHA vars/secrets
+task bootstrap:github-ci                           # prompt and publish GHA vars/secrets for CI 
 ```
 
 ## Infra development

@@ -72,13 +72,17 @@ The INT GitHub role includes ECR push to the central registry. STAGE/PROD roles 
 
 ### 4. GitHub Actions variables and secrets
 
-Set the repository variables and secrets listed under [GitHub Actions reference](#github-actions-reference). Workflow `01-infra-bootstrap.yml` cannot assume a role or synth without them.
+The assumption/prerequisite is that the administrator/operator has already set up their workstation as per the required tools and credentials. See [Onboarding - Local workstation setup](/docs/onboarding#local-workstation-setup).
 
-Hosted GitHub Actions runners have no `/etc/backbone-config`. Publish the same file as repository secret `BACKBONE_LICENCE` (requires `gh auth login`):
+Sets the repository variables and secrets listed under [GitHub Actions reference](#github-actions-reference).
 
 ```bash
-task bootstrap:licence-github
+task bootstrap:github-licence
+task bootstrap:github-env
+task bootstrap:github-ci
 ```
+
+You may be reprompted for `gh auth login`.
 
 ### 5. Platform stacks (`01-infra-bootstrap.yml`)
 
@@ -204,8 +208,8 @@ Backbone-related:
 External:
 
 - `NVD_API_KEY` - NVD API key for vulnerability scanning; see [NIST - Request an API Key](https://nvd.nist.gov/developers/request-an-api-key)
-- `OSS_INDEX_API_KEY` - Sonatype Guide / OSS Index API token for weekly CI dependency scanning only (local OWASP skips OSS Index by default); see [Sonatype Guide](https://guide.sonatype.com/) and [OSS Index analyzer](https://dependency-check.github.io/DependencyCheck/analyzers/oss-index-analyzer.html)
-- `CODECOV_TOKEN` - Codecov token for coverage reporting; see [Codecov](https://codecov.io/)
+- `OSS_INDEX_USER` and `OSS_INDEX_API_KEY` - Sonatype Guide credentials for weekly CI OWASP only. Local runs leave the analyzer off. See [Sonatype Guide](https://guide.sonatype.com/) and [OSS Index analyzer](https://dependency-check.github.io/DependencyCheck/analyzers/oss-index-analyzer.html)
+- `CODECOV_TOKEN` - Codecov repository upload token for weekly CI only. Local Clover HTML reports are never uploaded. See [Codecov upload token](https://docs.codecov.com/docs/codecov-uploader#upload-token)
 
 Login with Google (and OAuth refresh-token storage):
 
