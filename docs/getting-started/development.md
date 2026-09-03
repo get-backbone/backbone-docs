@@ -119,6 +119,19 @@ task test:all                                      # Run all unit and integratio
 task test:static                                   # OWASP(NVD)/PMD/SpotBugs/Checkstyle; OSS Index in CI only
 ```
 
+#### Code coverage
+
+Weekly CI publishes Clover coverage to Codecov. Local runs only write HTML under `target/site/clover/` (no upload).
+
+[![backbone-core](https://codecov.io/github/get-backbone/backbone-core/graph/badge.svg?token=6AJ2I85TKH)](https://app.codecov.io/github/get-backbone/backbone-core)
+[![backbone-kit](https://codecov.io/github/get-backbone/backbone-kit/graph/badge.svg?token=RP8Z2NWG9L)](https://app.codecov.io/github/get-backbone/backbone-kit)
+
+```bash
+task _clover:unit
+task _clover:integration                           # needs Floci + Postgres, same as the weekly job
+task _clover:report                                # writes target/site/clover/
+```
+
 ### 2. Development Runtime
 
 Run services in Quarkus dev mode:
