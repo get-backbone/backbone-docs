@@ -217,14 +217,12 @@ task bootstrap:dotenvrc
 
 This script sets up, and you will be prompted for:
 - **API Keys**: NVD (local OWASP); Sonatype Guide / OSS Index is CI-only
-- **Google OAuth** (required for Login with Google): client ID and secret from Google Cloud Console
-- **LinkedIn OAuth** [optional]: only when `linkedInOauthEnabled` is true in platform-config
-- **OAuth refresh encryption key**: generated if missing (`BACKBONE_OAUTH2_REFRESH_TOKEN_ENCRYPTION_KEY`)
-- **Quarkus SmallRye Config**: A secret for property encryption; generate using e.g. `openssl rand -base64 32`
+- **Google OAuth** [optional]: only when `googleOauthEnabled` is true in platform-config (requires `natEnabled: true`)
+- **LinkedIn OAuth** [optional]: only when `linkedInOauthEnabled` is true in platform-config (requires `natEnabled: true`)
 
 **References**:
 - NVD API key: <https://nvd.nist.gov/developers/request-an-api-key>
 - Google Cloud credentials: <https://console.cloud.google.com/apis/credentials>
-- LinkedIn Authentication [optional]: <https://learn.microsoft.com/en-gb/linkedin/shared/authentication/authentication>
+- LinkedIn Authentication: <https://learn.microsoft.com/en-gb/linkedin/shared/authentication/authentication>
 
 Next: [Development](/docs/development) to run Docker, Floci, and Quarkus locally.

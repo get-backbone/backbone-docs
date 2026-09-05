@@ -100,7 +100,7 @@ These guides cover how Backbone is built, how it runs, and how to extend it.
     Deployments, GitHub OIDC (OpenID Connect), AWS, Floci, CDK.
   </Card>
   <Card title="Security" icon="fa-shield-halved" href="/docs/security">
-    Platform security posture, least privilege, documented trade-offs.
+    Platform security posture, least privilege, and AWS Well-Architected hardening trade-offs.
   </Card>
   <Card title="Compliance" icon="fa-clipboard-check" href="/docs/compliance">
     Control mapping for forked deployments and operator responsibilities.

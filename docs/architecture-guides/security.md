@@ -45,6 +45,8 @@ Progressive hardening means teams can layer stronger transport, key management, 
 
 No repository-authored baseline IAM policy or construct intentionally grants `Action: "*"`, and wildcard resource usage is explicitly documented and constrained.
 
+Infrastructure stacks are reviewed against [AWS Well-Architected](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html) themes (especially security and reliability) as the platform evolves. Findings feed least-privilege IAM, network egress, and secrets handling; accepted trade-offs stay documented in this guide and related ADRs.
+
 ## Network and edge security posture
 
 ### Trust boundaries
