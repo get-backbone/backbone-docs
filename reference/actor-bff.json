@@ -509,6 +509,28 @@
           }
         }
       },
+      "SourceDocumentUploadResult" : {
+        "description" : "Result of uploading a source document to object storage",
+        "type" : "object",
+        "properties" : {
+          "key" : {
+            "type" : "string",
+            "description" : "S3 object key for the uploaded document",
+            "examples" : [ "12345678-resume.pdf" ]
+          },
+          "versionId" : {
+            "type" : "string",
+            "description" : "S3 object version id when versioning is enabled",
+            "examples" : [ "3/L4kqtJlcpXroDTDmJ+rmSpXd3dIbrHY+MTRCxf3vjVBH40Nr8X8gdRQBpUMLUo" ]
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Size of the uploaded document in bytes",
+            "examples" : [ 123456 ]
+          }
+        }
+      },
       "SubscriptionStatusResponse" : {
         "description" : "Subscription status for a recipient",
         "type" : "object",
