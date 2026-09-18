@@ -602,6 +602,38 @@
             "description" : "List of channels that were unsubscribed"
           }
         }
+      },
+      "ValidateTokenRequest" : {
+        "description" : "Request to validate a user JWT access or ID token",
+        "type" : "object",
+        "required" : [ "token" ],
+        "properties" : {
+          "token" : {
+            "type" : "string",
+            "description" : "Raw JWT to validate",
+            "pattern" : "\\S",
+            "maxLength" : 8192
+          }
+        }
+      },
+      "ValidateTokenResponse" : {
+        "description" : "User JWT validation result",
+        "type" : "object",
+        "properties" : {
+          "valid" : {
+            "type" : "boolean",
+            "description" : "Whether the token is a valid user/actor JWT"
+          },
+          "identity" : {
+            "description" : "Actor identity when valid",
+            "type" : "object",
+            "$ref" : "#/components/schemas/AuthIdentity"
+          },
+          "errorMessage" : {
+            "type" : "string",
+            "description" : "Error message when valid is false"
+          }
+        }
       }
     },
     "securitySchemes" : {
@@ -793,36 +825,6 @@
         }
       }
     },
-    "/auth/refresh-user-token" : {
-      "post" : {
-        "summary" : "Refresh a user access token",
-        "operationId" : "refreshUserToken",
-        "tags" : [ "Auth" ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/RefreshRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        }
-      }
-    },
     "/auth/register" : {
       "post" : {
         "summary" : "Register a new actor account",
@@ -916,6 +918,36 @@
         }
       }
     },
+    "/auth/tokens/refresh" : {
+      "post" : {
+        "summary" : "Refresh a user access token",
+        "operationId" : "refreshUserToken",
+        "tags" : [ "Auth" ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        }
+      }
+    },
     "/documents" : {
       "post" : {
         "summary" : "Upload and parse documents for an actor",
@@ -980,7 +1012,7 @@
         }
       }
     },
-    "/notifications/subscription-status" : {
+    "/notifications/subscriptions" : {
       "get" : {
         "summary" : "Get notification subscription status for an actor",
         "operationId" : "getSubscriptionStatus",
@@ -1019,7 +1051,7 @@
   },
   "info" : {
     "title" : "Actor BFF API",
-    "version" : "3.0.0",
+    "version" : "3.1.0",
     "description" : "Browser-facing Backbone API for authentication, actors, documents, and notification preferences."
   }
 }

@@ -45,7 +45,7 @@ Typical user-facing operations:
 |---------------------|---------------------------------------------------------------|
 | Sign in             | `POST /auth/login`                                            |
 | Register            | `POST /auth/register`                                         |
-| Refresh session     | `POST /auth/refresh-user-token`                               |
+| Refresh session     | `POST /auth/tokens/refresh`                               |
 | Google sign-in      | Redirect flow via `/auth/google/login`, then token exchange   |
 | LinkedIn sign-in    | Redirect flow via `/auth/linkedin/login`, then token exchange |
 | Profile / documents | Authenticated calls through the BFF                           |
